@@ -1,3 +1,5 @@
+// --- MODERN PROFESSIONAL UI REWRITE ---
+
 import 'package:flutter/material.dart';
 import '../../services/rank_api.dart';
 import '../student/rank_result_screen.dart';
@@ -11,7 +13,8 @@ class RankScreenBody extends StatefulWidget {
   State<RankScreenBody> createState() => _RankScreenBodyState();
 }
 
-class _RankScreenBodyState extends State<RankScreenBody> {
+class _RankScreenBodyState extends State<RankScreenBody>
+    with SingleTickerProviderStateMixin {
   String? selectedCompany;
   String? selectedJobRole;
 
@@ -19,8 +22,7 @@ class _RankScreenBodyState extends State<RankScreenBody> {
   List<String> jobRoles = [];
   bool isLoadingCompanies = true;
   bool isLoadingJobRoles = false;
-  bool isJobDetailsExpanded = false; // <-- add this state variable
-  Map<String, bool> entryExpandedMap = {}; 
+  bool isJobDetailsExpanded = false;
 
   Map<String, dynamic>? jobDetails;
   bool isLoadingJobDetails = false;
@@ -67,6 +69,7 @@ class _RankScreenBodyState extends State<RankScreenBody> {
   Future<void> loadJobDetails() async {
     if (selectedCompany == null || selectedJobRole == null) return;
     setState(() => isLoadingJobDetails = true);
+
     try {
       jobDetails = await RankApi.fetchJobDetails(
         company: selectedCompany!,
@@ -76,13 +79,13 @@ class _RankScreenBodyState extends State<RankScreenBody> {
       if (jobDetails?["weights"] != null) {
         Map<String, dynamic> apiWeights = jobDetails!["weights"];
         setState(() {
-          weights.updateAll((key, value) =>
-              apiWeights.containsKey(key) ? (apiWeights[key] as int) : 0);
+          weights.updateAll(
+            (key, value) => apiWeights.containsKey(key) ? apiWeights[key] : 0,
+          );
         });
       }
-    } catch (e) {
-      debugPrint("❌ Error fetching job details: $e");
-    }
+    } catch (e) {}
+
     setState(() => isLoadingJobDetails = false);
   }
 
@@ -99,8 +102,8 @@ class _RankScreenBodyState extends State<RankScreenBody> {
   }
 
   void updateWeight(String key, double value) {
-    int nearest = stepOptions.reduce((a, b) =>
-        (value - a).abs() < (value - b).abs() ? a : b);
+    int nearest = stepOptions.reduce(
+        (a, b) => (value - a).abs() < (value - b).abs() ? a : b);
 
     int maxAllowed = remainingPercentage(key);
     if (nearest > maxAllowed) nearest = maxAllowed;
@@ -124,7 +127,7 @@ class _RankScreenBodyState extends State<RankScreenBody> {
 
     if (total < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Total weight must be 100% to proceed")),
+        const SnackBar(content: Text("Total weight must reach 100%")),
       );
       return;
     }
@@ -133,12 +136,6 @@ class _RankScreenBodyState extends State<RankScreenBody> {
       company: selectedCompany!,
       jobRole: selectedJobRole!,
       weights: weights,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? "Rank submitted!" : "Submit failed. Try again."),
-      ),
     );
 
     if (success) {
@@ -157,304 +154,336 @@ class _RankScreenBodyState extends State<RankScreenBody> {
     }
   }
 
+  // --------------------------- UI ELEMENTS -----------------------------
+
+  Widget _glassCard({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    int total = weights.values.reduce((a, b) => a + b);
-
-    Color primaryBlue = Colors.blue.shade600;
-    Color grayBorder = Colors.grey.shade300;
-    Color textPrimary = Colors.black87;
+    final primaryBlue = Colors.blue.shade600;
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 252, 252, 253),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Rank Preferences",
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.bold, color: primaryBlue)),
-            const SizedBox(height: 20),
+      backgroundColor: const Color(0xFFF8F9FB),
 
-            // Company Dropdown
-            isLoadingCompanies
-                ? const Center(child: CircularProgressIndicator())
-                : Card(
-                    elevation: 2,
+      body: Stack(
+        children: [
+          // Gradient Header
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryBlue, Colors.blue.shade300],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          // Page Content
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Rank Preferences",
+                  style: TextStyle(
+                    fontSize: 26,
                     color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: grayBorder)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: DropdownButtonFormField<String>(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Customize your ranking weight distribution",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // ------------------ MAIN FORM CONTAINER -------------------
+                _glassCard(
+                  child: Column(
+                    children: [
+                      // Company Dropdown
+                      DropdownButtonFormField<String>(
                         decoration: const InputDecoration(
                           labelText: "Select Company",
-                          border: InputBorder.none,
                         ),
                         value: selectedCompany,
-                        dropdownColor: const Color.fromARGB(255, 255, 255, 255), 
                         items: companies
-                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                            .map((c) =>
+                                DropdownMenuItem(value: c, child: Text(c)))
                             .toList(),
                         onChanged: (val) {
                           setState(() => selectedCompany = val);
                           fetchJobRoles(val!);
                         },
                       ),
-                    ),
-                  ),
+                      const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
-
-            // Job Role Dropdown
-            isLoadingJobRoles
-                ? const Center(child: CircularProgressIndicator())
-                : Card(
-                    elevation: 2,
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: grayBorder)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: DropdownButtonFormField<String>(
+                      // Job Role Dropdown
+                      DropdownButtonFormField<String>(
                         decoration: const InputDecoration(
                           labelText: "Select Job Role",
-                          border: InputBorder.none,
                         ),
                         value: selectedJobRole,
-                        dropdownColor: const Color.fromARGB(255, 255, 255, 255), 
                         items: jobRoles
-                            .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                            .map((r) =>
+                                DropdownMenuItem(value: r, child: Text(r)))
                             .toList(),
                         onChanged: (val) {
                           setState(() => selectedJobRole = val);
                           loadJobDetails();
                         },
                       ),
-                    ),
-                  ),
 
-            const SizedBox(height: 24),
-            
-            // Job Details card
-            if (selectedCompany != null && selectedJobRole != null) ...[
-              const SizedBox(height: 12),
-              if (isLoadingJobDetails)
-                const Center(child: CircularProgressIndicator())
-              else if (jobDetails != null)
-                SizedBox(
-                  width: double.infinity, // Full width
-                  child: Card(
-                    color: Colors.white,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: grayBorder, width: 1.5),
-                    ),
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        setState(() {
-                          isJobDetailsExpanded = !isJobDetailsExpanded;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header with Expand Icon
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Job Details",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: textPrimary,
-                                  ),
-                                ),
-                                AnimatedRotation(
-                                  turns: isJobDetailsExpanded ? 0.5 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
+                      const SizedBox(height: 20),
 
-                            // Collapsed Preview
-                            if (!isJobDetailsExpanded)
-                              Text(
-                                jobDetails!["description"] ?? "",
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
-                              ),
+                      // Job Details
+                      if (selectedCompany != null &&
+                          selectedJobRole != null)
+                        _buildJobDetailsCard(),
 
-                            // Expanded Details
-                            if (isJobDetailsExpanded)
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxHeight: 300, // scrollable area height
-                                ),
-                                child: SingleChildScrollView(
-                                  child: Column(
-                                    children: [
-                                      for (var entry in [
-                                        ["Job Description", jobDetails!["description"]],
-                                        [
-                                          "Required Skills",
-                                          (jobDetails!["skills"] as List?)?.join(", ") ??
-                                              "No skills listed"
-                                        ],
-                                        [
-                                          "Certifications",
-                                          jobDetails!["certifications"] ?? "No info"
-                                        ],
-                                        [
-                                          "Additional Details",
-                                          jobDetails!["details"] ?? "Not specified"
-                                        ],
-                                        [
-                                          "Weight Distribution",
-                                          (jobDetails!["weights"] as Map?)?.entries
-                                                  .map((e) =>
-                                                      "${displayNames[e.key] ?? e.key}: ${e.value}%")
-                                                  .join(", ") ??
-                                              "No weights data"
-                                        ],
-                                      ])
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 6),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                entry[0],
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 15,
-                                                  color: textPrimary,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                entry[1] ?? "",
-                                                style: TextStyle(
-                                                    fontSize: 14, color: Colors.grey[800]),
-                                              ),
-                                              const Divider(height: 16, thickness: 1),
-                                            ],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
+                      const SizedBox(height: 20),
+
+                      // Weight Adjustment Section
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Weight Distribution",
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
+
+                      const SizedBox(height: 8),
+                      ...weights.keys.map((key) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 1),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${displayNames[key]} (${weights[key]}%)",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600),
+                              ),
+
+                              Slider(
+                                value: weights[key]!.toDouble(),
+                                min: 0,
+                                max: 100,
+                                divisions: 5,
+                                activeColor: primaryBlue,
+                                onChanged: isSliderDisabled(key)
+                                    ? null
+                                    : (val) => updateWeight(key, val),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Center(
+                  child: ElevatedButton(
+                    onPressed: submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      elevation: 4,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 42, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text(
+                      "View Rank",
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                   ),
                 ),
-            ],
-            const SizedBox(height: 24),
 
-            Text("Adjust Weightage",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium!
-                    .copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            Card(
-              color: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: grayBorder)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Allocated: $total%",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 15)),
-                        Text("Remaining: ${100 - total}%"),
-                      ],
+  // ------------------------------------------------------------------------------------
+
+  Widget _buildJobDetailsCard() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () =>
+                setState(() => isJobDetailsExpanded = !isJobDetailsExpanded),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Job Details",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                AnimatedRotation(
+                  turns: isJobDetailsExpanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(Icons.keyboard_arrow_down),
+                )
+              ],
+            ),
+          ),
+
+          if (!isJobDetailsExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                jobDetails?["description"] ?? "",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+
+          if (isJobDetailsExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _detailItem("Job Description",
+                      jobDetails?["description"] ?? ""),
+                  _detailItem("Required Skills",
+                      (jobDetails?["skills"] as List?)?.join(", ") ?? "-"),
+                  _detailItem(
+                      "Certifications", jobDetails?["certifications"] ?? "-"),
+                  _detailItem("Additional Details",
+                      jobDetails?["details"] ?? "-"),
+
+                  // Add the weight bar here
+                  if (jobDetails?["weights"] != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      "Weight Distribution",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
                     ),
-                    const SizedBox(height: 16),
-                    ...weights.keys.map((key) {
-                      String displayName = displayNames[key] ?? key;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("$displayName (${weights[key]}%)",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500, fontSize: 14)),
-                          SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              activeTrackColor: primaryBlue,
-                              inactiveTrackColor: grayBorder,
-                              thumbColor: primaryBlue,
-                              overlayColor: primaryBlue.withAlpha(32),
-                              trackHeight: 6,
-                            ),
-                            child: Slider(
-                              value: weights[key]!.toDouble(),
-                              min: 0,
-                              max: 100,
-                              divisions: 5,
-                              label: "$displayName ${weights[key]}%",
-                              onChanged: isSliderDisabled(key)
-                                  ? null
-                                  : (val) => updateWeight(key, val),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                      );
-                    }),
+                    const SizedBox(height: 6),
+                    _buildWeightBar(jobDetails!["weights"]),
                   ],
-                ),
+                ],
               ),
             ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 28),
+  Widget _detailItem(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700, fontSize: 14)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(color: Colors.grey.shade700)),
+        ],
+      ),
+    );
+  }
 
-            Center(
-              child: ElevatedButton(
-                onPressed: submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+  // --------------------------- WEIGHT BAR METHOD ------------------------
+  Widget _buildWeightBar(Map<String, dynamic> weights) {
+    final List<Map<String, dynamic>> segments = [
+      {"label": "Uni.", "value": weights['university'] ?? 0, "color": const Color.fromARGB(255, 0, 0, 128)},
+      {"label": "GPA", "value": weights['gpa'] ?? 0, "color": const Color.fromARGB(255, 65, 105, 225)},
+      {"label": "Certi.", "value": weights['certifications'] ?? 0, "color": const Color.fromARGB(255, 35, 206, 235)},
+      {"label": "Proj.", "value": weights['projects'] ?? 0, "color": const Color.fromARGB(255, 0, 128, 128)},
+    ];
+
+    final filtered = segments.where((s) => (s['value'] ?? 0) > 0).toList();
+    final total = filtered.fold<num>(0, (sum, s) => sum + (s['value'] ?? 0));
+
+    if (total == 0) return const SizedBox.shrink();
+
+    return Container(
+      height: 20,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: filtered.map((s) {
+          final flexValue = ((s['value'] ?? 0) * 100 ~/ total).clamp(1, 100);
+          return Flexible(
+            flex: flexValue,
+            child: Container(
+              decoration: BoxDecoration(
+                color: s['color'],
+                borderRadius: BorderRadius.horizontal(
+                  left: s == filtered.first ? const Radius.circular(10) : Radius.zero,
+                  right: s == filtered.last ? const Radius.circular(10) : Radius.zero,
                 ),
-                child: const Text("View Rank",
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                "${s['label']} ${s['value']}%",
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
               ),
             ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
+          );
+        }).toList(),
       ),
     );
   }

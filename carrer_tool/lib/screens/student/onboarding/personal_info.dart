@@ -18,6 +18,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   final _bioCtl = TextEditingController();
   final _locationCtl = TextEditingController();
 
+  int _bioLines = 1; // For expanding bio input
+
   File? _profilePic;
   final ImagePicker _picker = ImagePicker();
 
@@ -34,16 +36,21 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   void savePersonalInfo() {
     if (!_formKey.currentState!.validate()) return;
 
-    final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
+    final provider =
+        Provider.of<StudentOnboardingProvider>(context, listen: false);
     provider.setPersonalInfo(
       name: _nameCtl.text.trim(),
       bio: _bioCtl.text.trim(),
       location: _locationCtl.text.trim(),
       imageFile: _profilePic,
     );
+
     widget.onNext();
   }
 
+  // =======================
+  // UNIVERSAL TEXT FIELD
+  // =======================
   Widget _textField({
     required TextEditingController controller,
     required String label,
@@ -52,29 +59,128 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     String? Function(String?)? validator,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        validator: validator,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-          ),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Focus(
+        child: Builder(
+          builder: (context) {
+            final isFocused = Focus.of(context).hasFocus;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: isFocused
+                    ? [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : [],
+              ),
+              child: TextFormField(
+                controller: controller,
+                validator: validator,
+                maxLines: maxLines,
+                keyboardType: keyboardType,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  labelText: label,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
+  // =======================
+  // EXPANDING BIO FIELD
+  // =======================
+  Widget _bioField() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Focus(
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: isFocused
+                  ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: TextFormField(
+                controller: _bioCtl,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? "Bio is required" : null,
+
+                minLines: 1,      // starts small
+                maxLines: null,   // EXPAND INFINITELY
+                keyboardType: TextInputType.multiline,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  labelText: "Bio",
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF3B82F6), width: 2),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+  // =======================
+  //       UI BUILD
+  // =======================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,35 +202,43 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+
                 Text(
                   "Add a few details to set up your profile. You can always edit later.",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: 20),
 
                 _textField(
                   controller: _nameCtl,
                   label: "Full Name",
-                  validator: (v) => v == null || v.isEmpty ? "Name is required" : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Name is required" : null,
                 ),
-                _textField(
-                  controller: _bioCtl,
-                  label: "Bio",
-                  maxLines: 3,
-                  validator: (v) => v == null || v.isEmpty ? "Bio is required" : null,
-                ),
+
+                _bioField(),
+
                 _textField(
                   controller: _locationCtl,
                   label: "Location",
-                  validator: (v) => v == null || v.isEmpty ? "Location is required" : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Location is required" : null,
                 ),
 
-                // 👇 Circular Profile Image Section
                 const SizedBox(height: 20),
+
                 const Text(
                   "Profile Picture (Optional)",
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                 ),
+
                 const SizedBox(height: 12),
 
                 Center(
@@ -142,7 +256,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                             boxShadow: _profilePic != null
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black26.withOpacity(0.1),
+                                      color: Colors.black12,
                                       blurRadius: 6,
                                       offset: const Offset(0, 3),
                                     ),
@@ -190,14 +304,21 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 3,
                     ),
                     onPressed: savePersonalInfo,
                     child: const Text(
                       "Next",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 12),
               ],
             ),
           ),

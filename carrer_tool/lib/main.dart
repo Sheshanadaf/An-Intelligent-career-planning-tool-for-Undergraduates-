@@ -1,3 +1,4 @@
+import 'package:carrer_tool/screens/company/company_home_body.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,6 +25,10 @@ void main() {
   );
 }
 
+// main.dart
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -32,9 +37,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My App',
+      navigatorObservers: [routeObserver], // <-- required
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+
+      
 
       // First screen
       home: SignInScreen(),

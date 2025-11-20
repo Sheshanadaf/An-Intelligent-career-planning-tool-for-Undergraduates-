@@ -214,6 +214,9 @@ class _CollapsibleCardState extends State<CollapsibleCard> {
           break;
 
         case "licenses":
+          details.add(Text(
+              "${widget.data['organization'] ?? ''}",
+              style: TextStyle(color: widget.textColor ?? Colors.black)));
           details.add(Text(getLicenseDuration(),
               style: TextStyle(color: widget.textColor ?? Colors.black54)));
           if ((widget.data['credentialId'] ?? '').isNotEmpty) {

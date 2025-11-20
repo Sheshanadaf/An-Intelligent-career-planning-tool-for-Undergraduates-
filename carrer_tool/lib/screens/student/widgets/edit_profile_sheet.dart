@@ -119,7 +119,10 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text("Save Changes"),
+                  child: const Text(
+                    "Save Changes",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),

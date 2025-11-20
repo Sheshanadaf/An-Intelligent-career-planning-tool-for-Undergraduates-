@@ -11,27 +11,17 @@ class EducationScreen extends StatefulWidget {
   State<EducationScreen> createState() => _EducationScreenState();
 }
 
-class _EducationScreenState extends State<EducationScreen> {
+class _EducationScreenState extends State<EducationScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final List<Map<String, TextEditingController>> _educationList = [];
 
-  List<Map<String, TextEditingController>> educationList = [
-    {
-      "school": TextEditingController(),
-      "degree": TextEditingController(),
-      "field": TextEditingController(),
-      "gpa": TextEditingController(),
-      "description": TextEditingController(),
-      "year": TextEditingController(),
-      "startMonth": TextEditingController(),
-      "startYear": TextEditingController(),
-      "endMonth": TextEditingController(),
-      "endYear": TextEditingController(),
-    }
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _educationList.add(_createEmptyEducation());
+  }
 
-  void _addEducation() {
-    setState(() {
-      educationList.add({
+  Map<String, TextEditingController> _createEmptyEducation() => {
         "school": TextEditingController(),
         "degree": TextEditingController(),
         "field": TextEditingController(),
@@ -42,22 +32,25 @@ class _EducationScreenState extends State<EducationScreen> {
         "startYear": TextEditingController(),
         "endMonth": TextEditingController(),
         "endYear": TextEditingController(),
-      });
+      };
+
+  void _addEducation() {
+    setState(() {
+      _educationList.add(_createEmptyEducation());
     });
   }
 
   void _removeEducation(int index) {
     setState(() {
-      educationList.removeAt(index);
+      _educationList.removeAt(index);
     });
   }
 
-  void saveAndNext() {
+  void _saveAndNext() {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
-
-    final data = educationList.map((e) => {
+    final data = _educationList.map((e) => {
           "school": e["school"]!.text.trim(),
           "degree": e["degree"]!.text.trim(),
           "field": e["field"]!.text.trim(),
@@ -85,35 +78,40 @@ class _EducationScreenState extends State<EducationScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "Education",
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Add your educational background. You can add multiple entries.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 20),
 
-                      // Education Cards
-                      for (int i = 0; i < educationList.length; i++)
+                      // Animated Education Cards
+                      for (int i = 0; i < _educationList.length; i++)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: AddEducationCard(
-                            school: educationList[i]["school"]!,
-                            degree: educationList[i]["degree"]!,
-                            field: educationList[i]["field"]!,
-                            gpa: educationList[i]["gpa"]!,
-                            description: educationList[i]["description"]!,
-                            year: educationList[i]["year"]!,
-                            startMonth: educationList[i]["startMonth"]!,
-                            startYear: educationList[i]["startYear"]!,
-                            endMonth: educationList[i]["endMonth"]!,
-                            endYear: educationList[i]["endYear"]!,
+                            school: _educationList[i]["school"]!,
+                            degree: _educationList[i]["degree"]!,
+                            field: _educationList[i]["field"]!,
+                            gpa: _educationList[i]["gpa"]!,
+                            description: _educationList[i]["description"]!,
+                            year: _educationList[i]["year"]!,
+                            startMonth: _educationList[i]["startMonth"]!,
+                            startYear: _educationList[i]["startYear"]!,
+                            endMonth: _educationList[i]["endMonth"]!,
+                            endYear: _educationList[i]["endYear"]!,
                             onRemove: () => _removeEducation(i),
                             requireValidation: true,
                           ),
@@ -123,7 +121,7 @@ class _EducationScreenState extends State<EducationScreen> {
                       Center(
                         child: TextButton.icon(
                           onPressed: _addEducation,
-                          icon: const Icon(Icons.add, color: Color(0xFF3B82F6)),
+                          icon: const Icon(Icons.add_circle_outline, color: Color(0xFF3B82F6)),
                           label: const Text(
                             "Add Education",
                             style: TextStyle(
@@ -139,7 +137,7 @@ class _EducationScreenState extends State<EducationScreen> {
                 ),
               ),
 
-              // Next Button
+              // Next Button fixed
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: SizedBox(
@@ -152,11 +150,10 @@ class _EducationScreenState extends State<EducationScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: saveAndNext,
+                    onPressed: _saveAndNext,
                     child: const Text(
                       "Next",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),
                 ),

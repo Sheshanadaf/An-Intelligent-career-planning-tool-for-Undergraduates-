@@ -299,7 +299,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFCFCFD),
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade400,
+        backgroundColor: const Color.fromARGB(255, 25, 118, 210),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text("User Profile", style: TextStyle(color: Colors.white)),
       ),

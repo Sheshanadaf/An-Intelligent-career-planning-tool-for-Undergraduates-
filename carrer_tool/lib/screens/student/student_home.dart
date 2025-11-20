@@ -11,6 +11,12 @@ import 'rank_screen_body.dart';
 import 'job_posts_screen_body.dart';
 import 'university_ranking_screen_body.dart';
 
+/// --- Design Constants ---
+const kPrimaryColor = Color(0xFF3B82F6);
+const kAppBarColor = Color.fromARGB(255, 25, 118, 210);
+const kBackgroundColor = Color.fromARGB(255, 252, 252, 253);
+const kCardElevation = 4.0;
+
 class StudentHome extends StatefulWidget {
   const StudentHome({super.key, required this.userId});
   final String userId;
@@ -24,6 +30,8 @@ class _StudentHomeState extends State<StudentHome> {
   String? userId;
   bool isLoading = true;
 
+  final Map<String, bool> _expandedMap = {};
+
   @override
   void initState() {
     super.initState();
@@ -31,110 +39,60 @@ class _StudentHomeState extends State<StudentHome> {
   }
 
   Future<void> _initUser() async {
-    final storedId = await auth.getUserId();
-    if (storedId == null) {
-      Navigator.pushReplacementNamed(context, '/signin');
-      return;
+    try {
+      final storedId = await auth.getUserId();
+      if (!mounted) return;
+
+      if (storedId == null) {
+        Navigator.pushReplacementNamed(context, '/signin');
+        return;
+      }
+
+      userId = storedId;
+
+      final provider =
+          Provider.of<StudentOnboardingProvider>(context, listen: false);
+      await provider.fetchProfile(userId!);
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+    } catch (e) {
+      debugPrint("Error initializing user: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load profile")),
+        );
+      }
     }
-    userId = storedId;
-
-    final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
-    await provider.fetchProfile(userId!);
-
-    setState(() => isLoading = false);
   }
 
   void _logout() async {
-    await auth.logout();
-    Navigator.pushReplacementNamed(context, '/signin');
+    try {
+      await auth.logout();
+      Provider.of<StudentOnboardingProvider>(context, listen: false)
+          .clearProfile();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/signin');
+    } catch (e) {
+      debugPrint("Logout failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Logout failed")),
+        );
+      }
+    }
   }
 
-  List<Widget> _buildSection(String type, List items, Map<String, bool> expandedMap) {
-    return [
-      Container(
-        margin: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade400,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        type,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () => showAddEditBottomSheet(context, type.toLowerCase()),
-                    icon: Icon(Icons.add, color: Colors.blue.shade400),
-                  )
-                ],
-              ),
-            ),
-
-            // Empty state
-            if (items.isEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 255, 255, 255),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  "No items added yet",
-                  style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
-                ),
-              ),
-
-            // Section Items
-            ...items.asMap().entries.map((entry) {
-              return CollapsibleCard(
-                type: type.toLowerCase(),
-                data: Map<String, dynamic>.from(entry.value)..putIfAbsent('userId', () => userId),
-                index: entry.key,
-                expandedMap: expandedMap,
-                cardColor:Color.fromARGB(255, 255, 255, 255),
-                textColor: const Color.fromARGB(255, 0, 0, 0),
-                iconColor: const Color.fromARGB(255, 0, 119, 255),
-                deleteIconColor: Colors.red,
-              );
-            }),
-          ],
-        ),
-      ),
-    ];
-  }
-
-  Widget _buildSkillsSection(List skillsList) {
+  /// ------------------- Section Builders -------------------
+  Widget _buildSection(String type, List items) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -144,67 +102,87 @@ class _StudentHomeState extends State<StudentHome> {
                       width: 4,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade400,
+                        color: kPrimaryColor,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      "Skills",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    const SizedBox(width: 10),
+                    Text(
+                      type,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ],
                 ),
                 IconButton(
-                  onPressed: _showAddSkillDialog,
-                  icon: Icon(Icons.add, color: Colors.blue.shade400),
-                  splashRadius: 20,
-                  padding: EdgeInsets.zero,
+                  onPressed: () =>
+                      showAddEditBottomSheet(context, type.toLowerCase()),
+                  icon: const Icon(Icons.add, color: kPrimaryColor),
                 )
               ],
             ),
           ),
 
           // Empty state
-          if (skillsList.isEmpty)
+          if (items.isEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade800,
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3))
+                ],
               ),
-              child: const Text(
-                "No skills added yet",
-                style: TextStyle(color: Colors.white70),
+              child: const Center(
+                child: Text(
+                  "No items added yet",
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                ),
               ),
             ),
 
-          // Skills chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: skillsList.map((skill) {
-              return Chip(
-                label: Text(
-                  skill,
-                  style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                ),
-                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                deleteIcon: const Icon(Icons.remove_circle, size: 18, color: Color.fromARGB(255, 76, 70, 70)),
-                onDeleted: () async {
-                  final api = SkillsApi();
-                  final success = await api.removeSkill(userId!, skill);
-                  if (success) {
-                    final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
-                    provider.studentProfile['skills'] = await api.fetchSkills(userId!);
-                    setState(() {});
-                  }
-                },
-              );
-            }).toList(),
-          ),
+          // Section Items
+          ...items.asMap().entries.map((entry) {
+            return CollapsibleCard(
+              type: type.toLowerCase(),
+              data: Map<String, dynamic>.from(entry.value)
+                ..putIfAbsent('userId', () => userId),
+              index: entry.key,
+              expandedMap: _expandedMap,
+              cardColor: Colors.white,
+              textColor: Colors.black87,
+              iconColor: kPrimaryColor,
+              deleteIconColor: Colors.red,
+            );
+          }),
         ],
       ),
+    );
+  }
+
+  Widget _buildSkillsSection(List<String> skills) {
+    return SkillsSection(
+      skills: skills,
+      onAddSkill: _showAddSkillDialog,
+      onRemoveSkill: (skill) async {
+        final api = SkillsApi();
+        final success = await api.removeSkill(userId!, skill);
+        if (success) {
+          final provider =
+              Provider.of<StudentOnboardingProvider>(context, listen: false);
+          provider.studentProfile['skills'] =
+              await api.fetchSkills(userId!);
+          if (mounted) setState(() {});
+        }
+      },
     );
   }
 
@@ -213,23 +191,39 @@ class _StudentHomeState extends State<StudentHome> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Add Skill"),
         content: TextField(
           autofocus: true,
           onChanged: (value) => newSkill = value,
-          decoration: const InputDecoration(hintText: "Enter skill name"),
+          decoration: const InputDecoration(
+            hintText: "Enter skill name",
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
               if (newSkill.trim().isNotEmpty) {
                 final api = SkillsApi();
                 final success = await api.addSkill(userId!, newSkill.trim());
                 if (success) {
-                  final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
-                  provider.studentProfile['skills'] = await api.fetchSkills(userId!);
-                  setState(() {});
+                  final provider = Provider.of<StudentOnboardingProvider>(
+                      context,
+                      listen: false);
+                  provider.studentProfile['skills'] =
+                      await api.fetchSkills(userId!);
+                  if (mounted) setState(() {});
                 }
               }
               Navigator.pop(context);
@@ -241,14 +235,14 @@ class _StudentHomeState extends State<StudentHome> {
     );
   }
 
+  /// ------------------- Main Body -------------------
   Widget _getBody(StudentOnboardingProvider provider) {
     if (isLoading || userId == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final profile = provider.studentProfile;
-    final skillsList = (profile['skills'] as List?) ?? [];
-    final Map<String, bool> expandedMap = {};
+    final skillsList = List<String>.from(profile['skills'] ?? []);
 
     switch (provider.selectedPage) {
       case "rank":
@@ -272,14 +266,14 @@ class _StudentHomeState extends State<StudentHome> {
                 location: profile['location'],
                 onUpdated: (newProfile) async {
                   await provider.fetchProfile(userId!);
-                  setState(() {});
+                  if (mounted) setState(() {});
                 },
               ),
-              const SizedBox(height: 20),
-              ..._buildSection("Education", profile['education'] ?? [], expandedMap),
-              ..._buildSection("Licenses", profile['licenses'] ?? [], expandedMap),
-              ..._buildSection("Projects", profile['projects'] ?? [], expandedMap),
-              ..._buildSection("Volunteering", profile['volunteering'] ?? [], expandedMap),
+              const SizedBox(height: 10),
+              _buildSection("Education", profile['education'] ?? []),
+              _buildSection("Licenses", profile['licenses'] ?? []),
+              _buildSection("Projects", profile['projects'] ?? []),
+              _buildSection("Volunteering", profile['volunteering'] ?? []),
               _buildSkillsSection(skillsList),
             ],
           ),
@@ -291,63 +285,81 @@ class _StudentHomeState extends State<StudentHome> {
   Widget build(BuildContext context) {
     return Consumer<StudentOnboardingProvider>(
       builder: (context, provider, _) => Scaffold(
-        backgroundColor: const Color.fromARGB(255,252, 252, 253),
-        drawer: Drawer(
-          child: SafeArea(
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  color: Colors.blue.shade400,
-                  child: const Text(
-                    "Student Dashboard",
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      _drawerItem(Icons.person, "Profile", "home", provider),
-                      _drawerItem(Icons.school, "Rank", "rank", provider),
-                      _drawerItem(Icons.info, "Info", "university", provider),
-                      _drawerItem(Icons.work, "Jobs", "jobs", provider),
-                      _drawerItem(Icons.settings, "Settings", "settings", provider),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.logout, color: Colors.red),
-                        title: const Text("Logout", style: TextStyle(color: Colors.red)),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _logout();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        backgroundColor: kBackgroundColor,
+        drawer: _buildDrawer(provider),
         appBar: AppBar(
-          backgroundColor: Colors.blue.shade400,
+          backgroundColor: kAppBarColor,
           iconTheme: const IconThemeData(color: Colors.white),
-          title: const Text("Student Dashboard", style: TextStyle(color: Colors.white)),
+          title: const Text(
+            "Student Dashboard",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
         ),
         body: _getBody(provider),
       ),
     );
   }
 
-  Widget _drawerItem(IconData icon, String title, String page, StudentOnboardingProvider provider) {
+  Widget _buildDrawer(StudentOnboardingProvider provider) {
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [kPrimaryColor, kAppBarColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: const Text(
+                "Student Dashboard",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _drawerItem(Icons.person, "Profile", "home", provider),
+                  _drawerItem(Icons.school, "Rank", "rank", provider),
+                  _drawerItem(Icons.info, "Info", "university", provider),
+                  _drawerItem(Icons.work, "Jobs", "jobs", provider),
+                  _drawerItem(Icons.settings, "Settings", "settings", provider),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text("Logout",
+                        style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _logout();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem(
+      IconData icon, String title, String page, StudentOnboardingProvider provider) {
     final isSelected = provider.selectedPage == page;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.blue.shade400 : Colors.grey[700]),
+      leading: Icon(icon, color: isSelected ? kPrimaryColor : Colors.grey[700]),
       title: Text(
         title,
         style: TextStyle(
-          color: isSelected ? Colors.blue.shade400 : Colors.grey[800],
+          color: isSelected ? kPrimaryColor : Colors.grey[800],
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -355,6 +367,91 @@ class _StudentHomeState extends State<StudentHome> {
         provider.setSelectedPage(page);
         Navigator.pop(context);
       },
+    );
+  }
+}
+
+/// ------------------- SkillsSection Widget -------------------
+class SkillsSection extends StatelessWidget {
+  final List<String> skills;
+  final VoidCallback onAddSkill;
+  final Function(String) onRemoveSkill;
+
+  const SkillsSection({
+    super.key,
+    required this.skills,
+    required this.onAddSkill,
+    required this.onRemoveSkill,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Skills",
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              IconButton(
+                  onPressed: onAddSkill,
+                  icon: const Icon(Icons.add, color: kPrimaryColor)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Empty state
+          if (skills.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                "No skills added yet",
+                style: TextStyle(color: Colors.black54),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: skills
+                  .map((skill) => Chip(
+                        label: Text(skill,
+                            style: const TextStyle(color: Colors.black87)),
+                        backgroundColor: Colors.white,
+                        shadowColor: Colors.black12,
+                        elevation: 2,
+                        deleteIcon: const Icon(Icons.remove_circle,
+                            size: 18, color: Color.fromARGB(255, 18, 114, 166)),
+                        onDeleted: () => onRemoveSkill(skill),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
     );
   }
 }

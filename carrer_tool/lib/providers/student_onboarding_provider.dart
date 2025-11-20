@@ -171,6 +171,25 @@ class StudentOnboardingProvider extends ChangeNotifier {
     }
   }
 
+  // ---------------- Clear Profile ----------------
+void clearProfile() {
+  studentProfile = {
+    "name": "",
+    "bio": "",
+    "location": "",
+    "imageUrl": "",
+    "education": [],
+    "skills": [],
+    "licenses": [],
+    "projects": [],
+    "volunteering": [],
+  };
+  selectedPage = "home";
+  notifyListeners();
+  debugPrint("🧹 Student profile cleared");
+}
+
+
   // ---------------- Submit Profile ----------------
   Future<bool> submitProfile() async {
     const String url = "http://10.0.2.2:4000/api/student/profile";

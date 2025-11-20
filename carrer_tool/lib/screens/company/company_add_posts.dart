@@ -1,16 +1,19 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'services/company_api.dart';
 
 class CompanyAddPosts extends StatefulWidget {
   final String companyName;
   final String companyReg;
+  final String companyDis;
   final String? companyLogo;
 
   const CompanyAddPosts({
     super.key,
     required this.companyName,
     required this.companyReg,
-    this.companyLogo,
+    required this.companyDis,
+    this.companyLogo, required companyId,
   });
 
   @override
@@ -32,7 +35,6 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
   bool showForm = false;
   bool isEditing = false;
   String? editingPostId;
-
   List<dynamic> posts = [];
 
   double uniWeight = 0.0;
@@ -54,7 +56,7 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
         isLoading = false;
       });
     } catch (e) {
-      print("❌ Error loading posts: $e");
+      debugPrint("❌ Error loading posts: $e");
       setState(() => isLoading = false);
     }
   }
@@ -118,6 +120,7 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
       },
       "companyName": widget.companyName,
       "companyReg": widget.companyReg,
+      "companyLogo": widget.companyLogo,
     };
 
     bool success = false;
@@ -129,228 +132,57 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            isEditing ? 'Job Post Updated Successfully!' : 'Job Post Added Successfully!'),
+        content: Text(isEditing
+            ? 'Job Post Updated Successfully!'
+            : 'Job Post Added Successfully!'),
       ));
       await _loadPosts();
       _resetForm();
       setState(() => showForm = false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(isEditing
-            ? 'Failed to update post'
-            : 'Failed to add post'),
+        content: Text(isEditing ? 'Failed to update post' : 'Failed to add post'),
       ));
     }
 
     setState(() => isSubmitting = false);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isValidTotal = totalWeight == 100;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Company Job Posts'),
-        elevation: 2,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: Icon(showForm ? Icons.close : Icons.add),
-        label: Text(showForm
-            ? (isEditing ? "Cancel Edit" : "Close Form")
-            : "Add Job Post"),
-        onPressed: () {
-          setState(() {
-            if (showForm && isEditing) _resetForm();
-            showForm = !showForm;
-          });
-        },
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 300),
-                    crossFadeState: showForm
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                    firstChild: _buildFormCard(isValidTotal),
-                    secondChild: const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 25),
-                  const Text(
-                    "Your Job Posts",
-                    style: TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  posts.isEmpty
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: Text(
-                              "No job posts added yet.\nTap the '+' button to add one.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 16, color: Colors.grey),
-                            ),
-                          ),
-                        )
-                      : Column(
-                          children: posts.map((post) {
-                            final weights = post['weights'] ?? {};
-                            return Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ExpansionTile(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                tilePadding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                childrenPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                title: Text(
-                                  post['jobRole'] ?? 'No Role',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
-                                ),
-                                subtitle: Text(
-                                  post['description'] ?? 'No Description',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: Colors.blueAccent),
-                                  onPressed: () => _openForEdit(post),
-                                ),
-                                children: [
-                                  const Divider(),
-                                  _buildInfoRow(
-                                      "Description", post['description']),
-                                  _buildInfoRow("Skills", post['skills']),
-                                  _buildInfoRow("Certifications",
-                                      post['certifications']),
-                                  _buildInfoRow("Other Details",
-                                      post['details']),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    "Criteria Weights:",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "University: ${weights['university'] ?? 0}%\n"
-                                    "GPA: ${weights['gpa'] ?? 0}%\n"
-                                    "Certifications: ${weights['certifications'] ?? 0}%\n"
-                                    "Projects: ${weights['projects'] ?? 0}%",
-                                    style: const TextStyle(height: 1.4),
-                                  ),
-                                  const SizedBox(height: 10),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildFormCard(bool isValidTotal) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEditing ? "Edit Job Post" : "Create New Job Post",
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-              _buildTextField(_roleCtl, "Job Role"),
-              _buildTextField(_descCtl, "Description", maxLines: 3),
-              _buildTextField(_skillsCtl, "Required Skills"),
-              _buildTextField(_certificationCtl, "Certifications and Badges"),
-              _buildTextField(_detailsCtl, "Other Details", maxLines: 2),
-              const Divider(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Criteria Weights (%)",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    "Total: $totalWeight%",
-                    style: TextStyle(
-                      color: isValidTotal ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              _buildWeightSlider("University Ranking", uniWeight,
-                  (v) => _onWeightChanged('uni', v)),
-              _buildWeightSlider("GPA Score", gpaWeight,
-                  (v) => _onWeightChanged('gpa', v)),
-              _buildWeightSlider("Certifications", certWeight,
-                  (v) => _onWeightChanged('cert', v)),
-              _buildWeightSlider("Projects", projWeight,
-                  (v) => _onWeightChanged('proj', v)),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: Icon(isEditing ? Icons.save : Icons.send),
-                  label: isSubmitting
-                      ? const Text("Processing...")
-                      : Text(isEditing ? "Save Changes" : "Submit Job Post"),
-                  onPressed:
-                      (!isValidTotal || isSubmitting) ? null : _submitPost,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+  Future<void> _deletePost(String postId) async {
+    bool confirmed = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: const Text("Are you sure you want to delete this job post?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("Delete")),
+        ],
       ),
     );
+    if (!confirmed) return;
+
+    bool success = await companyApi.deleteJobPost(postId);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Job post deleted successfully")));
+      await _loadPosts();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to delete job post")));
+    }
   }
 
   void _onWeightChanged(String field, double value) {
     double totalBefore =
         uniWeight + gpaWeight + certWeight + projWeight - _getFieldValue(field);
     double newTotal = totalBefore + value;
-
-    // Prevent total > 1.0 (100%)
     if (newTotal <= 1.0) {
-      setState(() {
-        _setFieldValue(field, value);
-      });
+      setState(() => _setFieldValue(field, value));
     }
   }
 
@@ -386,25 +218,329 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
     }
   }
 
-  Widget _buildTextField(TextEditingController ctl, String label,
-      {int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        controller: ctl,
-        maxLines: maxLines,
-        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: Colors.grey[100],
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.grey)),
+  Widget buildWeightsBar(Map<String, dynamic> weights) {
+    final labels = ["Uni.", "GPA", "Certi.", "Proj."];
+    final keys = ["university", "gpa", "certifications", "projects"];
+    final colors = [
+      const Color(0xFF1F618D),
+      const Color(0xFF2980B9),
+      const Color(0xFF3498DB),
+      const Color(0xFF48C9B0),
+    ];
+
+    final filtered = <Map<String, dynamic>>[];
+    for (int i = 0; i < keys.length; i++) {
+      final value = (weights[keys[i]] ?? 0);
+      if (value > 0)
+        filtered.add({'label': labels[i], 'value': value, 'color': colors[i]});
+    }
+
+    if (filtered.isEmpty) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: filtered.map((e) {
+          final flex = (e['value'] as num).toInt();
+          return Expanded(
+            flex: flex,
+            child: Container(
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: e['color'] as Color,
+              ),
+              child: Text(
+                "${e['label']} (${e['value']}%)",
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isValidTotal = totalWeight == 100;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            if (showForm && isEditing) _resetForm();
+            showForm = !showForm;
+          });
+        },
+        backgroundColor: Colors.blue.shade700,
+        child: Icon(
+          showForm ? Icons.close : Icons.add,
+          color: Colors.white,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16), // optional: rounded corners
+          side: BorderSide(
+            color: const Color.fromARGB(255, 255, 255, 255), // optional: add border if needed
+            width: 0,
+          ),
+        ),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 300),
+                    crossFadeState: showForm
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    firstChild: _buildFormCard(isValidTotal),
+                    secondChild: const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Your Job Posts",
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  posts.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(
+                              "No job posts added yet.\nTap the '+' button to add one.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 16, color: Colors.grey.shade700),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: posts.map((post) {
+                            final weights = post['weights'] ?? {};
+                            return _buildPostCard(post, weights);
+                          }).toList(),
+                        ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildSection(String title, String? content) {
+  if (content == null || content.trim().isEmpty) {
+    return const SizedBox.shrink();
+  }
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          content,
+          textAlign: TextAlign.justify,
+          style: const TextStyle(
+            height: 1.5,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+  Widget _buildPostCard(Map<String, dynamic> post, Map<String, dynamic> weights) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Material(
+        borderRadius: BorderRadius.circular(16),
+        elevation: 4,
+        color: Colors.white,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            title: Text(post['jobRole'] ?? 'No Role',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: Text(
+              post['description'] ?? 'No Description',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                  onPressed: () => _openForEdit(post),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  onPressed: () => _deletePost(post['_id']),
+                ),
+              ],
+            ),
+            children: [
+              const Divider(),
+              _buildSection("Description", post['description']),
+              _buildSection("Required Skills", post['skills']),
+              _buildSection("Certifications", post['certifications']),
+              _buildSection("Other Details", post['details']),
+
+              const SizedBox(height: 8),
+              if (weights.isNotEmpty) buildWeightsBar(weights),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildInfoRowJustify(String title, String? value) {
+    if (value == null || value.trim().isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "$title: ",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.justify,
+              style: const TextStyle(height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormCard(bool isValidTotal) {
+  return Card(
+    color: Colors.white, // <-- Add this line
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    elevation: 12,
+    shadowColor: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isEditing ? "Edit Job Post" : "Create New Job Post",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildTextField(_roleCtl, "Job Role"),
+            _buildTextField(_descCtl, "Description", maxLines: 5),
+            _buildTextField(_skillsCtl, "Required Skills", maxLines: 4),
+            _buildTextField(_certificationCtl, "Certifications and Badges", maxLines: 4),
+            _buildTextField(_detailsCtl, "Other Details", maxLines: 3),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Criteria Weights (%)",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    "Total: $totalWeight%",
+                    style: TextStyle(
+                      color: isValidTotal ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              _buildWeightSlider("University Ranking", uniWeight, (v) => _onWeightChanged('uni', v)),
+              _buildWeightSlider("GPA Score", gpaWeight, (v) => _onWeightChanged('gpa', v)),
+              _buildWeightSlider("Certifications", certWeight, (v) => _onWeightChanged('cert', v)),
+              _buildWeightSlider("Projects", projWeight, (v) => _onWeightChanged('proj', v)),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(isEditing ? Icons.save : Icons.send),
+                  label: isSubmitting
+                      ? const Text("Processing...")
+                      : Text(isEditing ? "Save Changes" : "Submit Job Post"),
+                  onPressed: (!isValidTotal || isSubmitting) ? null : _submitPost,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController ctl, String label,
+    {int maxLines = 1}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12), // less spacing between fields
+    child: TextFormField(
+      controller: ctl,
+      maxLines: maxLines, // limit max lines
+      minLines: 1,
+      keyboardType: TextInputType.multiline,
+      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12, // reduce horizontal padding slightly
+          // reduce vertical padding to make field shorter
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color.fromARGB(255, 235, 235, 235), width: 0.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+        ),
+      ),
+    ),
+  );
+}
+
 
   Widget _buildWeightSlider(
       String label, double value, Function(double) onChanged) {
@@ -419,27 +555,10 @@ class _CompanyAddPostsState extends State<CompanyAddPosts>
           divisions: 5,
           label: "${(value * 100).toInt()}%",
           onChanged: onChanged,
+          activeColor: Colors.blue.shade700,
+          thumbColor: Colors.blue.shade700,
         ),
       ],
     );
   }
-}
-
-Widget _buildInfoRow(String title, String? value) {
-  if (value == null || value.trim().isEmpty) return const SizedBox.shrink();
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: RichText(
-      text: TextSpan(
-        style: const TextStyle(fontSize: 14, color: Colors.black87),
-        children: [
-          TextSpan(
-            text: "$title: ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(text: value),
-        ],
-      ),
-    ),
-  );
 }
