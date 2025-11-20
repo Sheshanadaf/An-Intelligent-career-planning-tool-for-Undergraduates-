@@ -8,6 +8,7 @@ const JobPostSchema = new mongoose.Schema({
   },
   companyName: { type: String, required: true },
   companyReg: { type: String, required: true },
+  companyLogo: { type: String, required: true },
   jobRole: { type: String, required: true },
   description: { type: String, required: true },
   skills: { type: String, required: true },

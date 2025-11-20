@@ -11,6 +11,7 @@ const companyProfileSchema = new mongoose.Schema(
     companyName: { type: String, required: true },
     email: { type: String, required: true },
     companyReg: { type: String },
+    companyDis: { type: String },
     password: { type: String },
     role: { type: String, default: "company" },
     companyLogo: { type: String },

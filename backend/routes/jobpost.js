@@ -162,6 +162,34 @@ router.get("/:userId/jobs", async (req, res) => {
   }
 });
 
+// 🟢 Delete a job post by ID
+router.delete("/:postId", async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    console.log("🗑️ Incoming Delete Request for Job Post ID:", postId);
+
+    if (!postId) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+
+    const deletedPost = await JobPost.findByIdAndDelete(postId);
+
+    if (!deletedPost) {
+      return res.status(404).json({ message: "Job post not found" });
+    }
+
+    res.status(200).json({
+      message: "Job post deleted successfully",
+      jobPost: deletedPost,
+    });
+  } catch (error) {
+    console.error("❌ Error deleting job post:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+
 // 🟢 Create new job post
 router.post("/", async (req, res) => {
   try {
@@ -177,6 +205,7 @@ router.post("/", async (req, res) => {
       certifications,
       details,
       weights,
+      companyLogo
     } = req.body;
 
     if (!companyId || !companyName || !jobRole) {
@@ -193,6 +222,7 @@ router.post("/", async (req, res) => {
       certifications,
       details,
       weights,
+      companyLogo
     });
 
     await newJobPost.save();

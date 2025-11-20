@@ -43,7 +43,7 @@ router.post("/profile", upload.single("companyLogo"), async (req, res) => {
       console.log("⚪ No file uploaded with this request.");
     }
 
-    const { companyId, companyName, email, companyReg, role, password } = req.body;
+    const { companyId, companyName, email, companyReg, companyDis, role, password } = req.body;
 
     if (!companyId) {
       console.log("❌ Missing companyId in body!");
@@ -56,6 +56,7 @@ router.post("/profile", upload.single("companyLogo"), async (req, res) => {
       companyName,
       email,
       companyReg,
+      companyDis,
       role,
       password,
     };
@@ -99,6 +100,7 @@ router.put("/profile/update", upload.single("companyLogo"), async (req, res) => 
       companyName, 
       email, 
       companyReg,
+      companyDis,
       jobRole,
       description,
       skills,
@@ -134,6 +136,10 @@ router.put("/profile/update", upload.single("companyLogo"), async (req, res) => 
     if (companyReg && companyReg.trim() !== "") {
       profile.companyReg = companyReg.trim();
       console.log("✅ Updated companyReg:", companyReg);
+    }
+    if (companyDis && companyDis.trim() !== "") {
+      profile.companyDis = companyDis.trim();
+      console.log("✅ Updated companyDis:", companyDis);
     }
 
     // ✅ Update logo if file uploaded
@@ -175,7 +181,61 @@ router.put("/profile/update", upload.single("companyLogo"), async (req, res) => 
   }
 });
 
+  // =========================
+// ✏️ PUT: Update Company Profile (Simplified for frontend requests)
+// =========================
+// ------------------- Update Company Profile -------------------
+router.put(
+  "/profile/update/:companyId",
+  upload.single("companyLogo"),
+  async (req, res) => {
+    try {
+      const { companyId } = req.params;
+      if (!companyId) {
+        return res.status(400).json({ message: "❌ Company ID required" });
+      }
 
+      const profile = await CompanyProfile.findOne({ companyId });
+      if (!profile) {
+        return res.status(404).json({ message: "❌ Profile not found" });
+      }
+
+      console.log("📥 Incoming profile update request");
+      console.log("🧾 Text fields:", req.body);
+      console.log("🖼️ Uploaded file:", req.file);
+
+      // Update text fields if provided
+      const { companyName, companyReg, companyDis } = req.body;
+      if (companyName && companyName.trim() !== "")
+        profile.companyName = companyName.trim();
+      if (companyReg && companyReg.trim() !== "")
+        profile.companyReg = companyReg.trim();
+      if (companyDis && companyDis.trim() !== "")
+        profile.companyDis = companyDis.trim();
+
+      // Update logo if file uploaded
+      if (req.file) {
+        profile.companyLogo = `${req.protocol}://${req.get(
+          "host"
+        )}/uploads/${req.file.filename}`;
+      }
+
+      await profile.save();
+      console.log("✅ Profile updated successfully");
+
+      res.status(200).json({
+        message: "✅ Company profile updated successfully",
+        profile,
+      });
+    } catch (err) {
+      console.error("❌ Error updating company profile:", err);
+      res.status(500).json({
+        message: "Server error updating company profile",
+        error: err.message,
+      });
+    }
+  }
+);
 // =========================
 // 📥 GET: Fetch Company Profile
 // =========================

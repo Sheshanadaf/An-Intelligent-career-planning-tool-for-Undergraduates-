@@ -13,6 +13,22 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ✅ GET all university names only
+router.get("/names", async (req, res) => {
+  try {
+    // Fetch only the 'name' field, sort by rank ascending
+    const universities = await UniversityRanking.find({}, { name: 1, _id: 0 }).sort({ rank: 1 });
+    
+    // Extract names into a simple array
+    const universityNames = universities.map(u => u.name);
+
+    res.status(200).json(universityNames);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 // ✅ POST add new ranking
 router.post("/", async (req, res) => {
   try {
