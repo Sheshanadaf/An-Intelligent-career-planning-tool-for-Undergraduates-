@@ -82,7 +82,7 @@ class _CompanyLayoutState extends State<CompanyLayout> {
         backgroundColor: kAppBarColor,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          selectedIndex == 0 ? 'Company Dashboard' : 'Add Posts',
+          selectedIndex == 0 ? 'Company Dashboard' : 'Add/Edit Posts',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
@@ -135,7 +135,7 @@ class _CompanyLayoutState extends State<CompanyLayout> {
                       padding: EdgeInsets.zero,
                       children: [
                         _drawerItem(Icons.home, "Home", 0),
-                        _drawerItem(Icons.add_box_outlined, "Add Posts", 1),
+                        _drawerItem(Icons.add_box_outlined, "Add/Edit Posts", 1),
                         const Divider(),
                         ListTile(
                           leading: const Icon(Icons.logout, color: Colors.red),

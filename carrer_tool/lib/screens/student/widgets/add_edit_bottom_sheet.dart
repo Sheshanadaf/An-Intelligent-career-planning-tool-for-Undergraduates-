@@ -104,6 +104,11 @@ Future<void> showAddEditBottomSheet(
     await fetchUniversities();
   }
 
+  // Map of special display names
+  final Map<String, String> typeDisplayNames = {
+    "licenses": "Certification and Badges",
+  };
+
   // -------------------- Bottom Sheet --------------------
   await showModalBottomSheet(
     context: context,
@@ -142,7 +147,7 @@ Future<void> showAddEditBottomSheet(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     alignment: Alignment.center,
                     child: Text(
-                      "${existingData == null ? "Add" : "Edit"} ${type[0].toUpperCase()}${type.substring(1)}",
+                      "${existingData == null ? "Add" : "Edit"} ${typeDisplayNames[type] ?? type[0].toUpperCase() + type.substring(1)}",
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -155,32 +160,130 @@ Future<void> showAddEditBottomSheet(
 
                   // -------------------- Form Fields --------------------
                   ...controllers.entries.map((e) {
-                    // Education dropdown for school
+                    // -------------------- School/University --------------------
                     if (type == "education" && e.key == "school") {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
-                        child: DropdownButtonFormField<String>(
-                          value: e.value.text.isEmpty ? null : e.value.text,
-                          items: universities
-                              .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: (v) => setStateSheet(() => e.value.text = v ?? ""),
-                          decoration: InputDecoration(
-                            labelText: "School / University",
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            border: OutlineInputBorder(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () async {
+                            if (loadingUniversities) return;
+
+                            List<String> filteredUniversities = List.from(universities);
+                            String searchQuery = '';
+
+                            final selected = await showModalBottomSheet<String>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                              ),
+                              builder: (context) => StatefulBuilder(
+                                builder: (context, setSheetState) => Padding(
+                                  padding: EdgeInsets.only(
+                                    top: 16,
+                                    left: 16,
+                                    right: 16,
+                                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: TextField(
+                                          decoration: InputDecoration(
+                                            hintText: "Search university",
+                                            prefixIcon: const Icon(Icons.search),
+                                            border: InputBorder.none,
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                          ),
+                                          onChanged: (val) {
+                                            searchQuery = val.toLowerCase();
+                                            setSheetState(() {
+                                              filteredUniversities = universities
+                                                  .where((u) => u.toLowerCase().contains(searchQuery))
+                                                  .toList();
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        height: 300,
+                                        child: filteredUniversities.isEmpty
+                                            ? const Center(child: Text("No universities found"))
+                                            : ListView.separated(
+                                                itemCount: filteredUniversities.length,
+                                                separatorBuilder: (_, __) => const Divider(height: 1),
+                                                itemBuilder: (context, index) {
+                                                  final uni = filteredUniversities[index];
+                                                  return ListTile(
+                                                    title: Text(
+                                                      uni,
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                    trailing: e.value.text == uni
+                                                        ? const Icon(Icons.check, color: Colors.blue)
+                                                        : null,
+                                                    onTap: () => Navigator.pop(context, uni),
+                                                  );
+                                                },
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+
+                            if (selected != null) {
+                              setStateSheet(() => e.value.text = selected);
+                            }
+                          },
+                          child: Container(
+                            height: 52,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.grey),
+                              border: Border.all(color: Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    e.value.text.isEmpty ? "Select School / University" : e.value.text,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: e.value.text.isEmpty ? Colors.grey.shade600 : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              ],
                             ),
                           ),
-                          validator: (v) => v == null || v.isEmpty ? "School is required" : null,
                         ),
                       );
                     }
 
-                    // Description field
+                    // -------------------- Description field --------------------
                     if (e.key == "description") {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
@@ -193,7 +296,7 @@ Future<void> showAddEditBottomSheet(
                             decoration: InputDecoration(
                               labelText: e.key[0].toUpperCase() + e.key.substring(1),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: Colors.white,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
@@ -205,7 +308,17 @@ Future<void> showAddEditBottomSheet(
                       );
                     }
 
-                    // Normal text fields excluding duration
+                    Map<String, String> customLabels = {
+                      "gpa": "GPA",
+                      "credentialId": "Credential ID",
+                      "credentialUrl": "Credential Url",
+                      "projectUrl":"Project Url",
+                      "url":"WebSite link",
+                      "xyz": "Some Other Label",
+                      // add more mappings here
+                    };
+
+                    // -------------------- Normal text fields excluding duration --------------------
                     if (!["startMonth","startYear","endMonth","endYear"].contains(e.key)) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
@@ -214,9 +327,11 @@ Future<void> showAddEditBottomSheet(
                           maxLines: 1,
                           validator: (v) => v == null || v.isEmpty ? "${e.key} is required" : null,
                           decoration: InputDecoration(
-                            labelText: e.key[0].toUpperCase() + e.key.substring(1),
+                            labelText: customLabels.containsKey(e.key) 
+                              ? customLabels[e.key]! 
+                              : e.key[0].toUpperCase() + e.key.substring(1),
                             filled: true,
-                            fillColor: Colors.grey[50],
+                            fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -234,109 +349,130 @@ Future<void> showAddEditBottomSheet(
                   if (["licenses","projects","volunteering","education"].contains(type)) ...[
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: GestureDetector(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
                         onTap: () async {
                           String tempStartMonth = controllers["startMonth"]!.text;
                           String tempStartYear = controllers["startYear"]!.text;
                           String tempEndMonth = controllers["endMonth"]!.text;
                           String tempEndYear = controllers["endYear"]!.text;
+                          bool isPresent = tempEndMonth.toLowerCase() == "present" || tempEndYear.toLowerCase() == "present";
 
-                          final result = await showModalBottomSheet<Map<String,String>>(
+                          final result = await showModalBottomSheet<Map<String, String>>(
                             context: context,
+                            isScrollControlled: true,
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                             ),
                             builder: (ctx) => Padding(
                               padding: const EdgeInsets.all(16),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text("Select Duration", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          value: tempStartMonth.isEmpty ? null : tempStartMonth,
-                                          items: months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                                          onChanged: (v) => tempStartMonth = v!,
-                                          decoration: InputDecoration(
-                                            labelText: "Start Month",
-                                            filled: true,
-                                            fillColor: Colors.grey[50],
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          value: tempStartYear.isEmpty ? null : tempStartYear,
-                                          items: years().map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                                          onChanged: (v) => tempStartYear = v!,
-                                          decoration: InputDecoration(
-                                            labelText: "Start Year",
-                                            filled: true,
-                                            fillColor: Colors.grey[50],
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          value: tempEndMonth.isEmpty ? null : tempEndMonth,
-                                          items: months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                                          onChanged: (v) => tempEndMonth = v!,
-                                          decoration: InputDecoration(
-                                            labelText: "End Month",
-                                            filled: true,
-                                            fillColor: Colors.grey[50],
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          value: tempEndYear.isEmpty ? null : tempEndYear,
-                                          items: years().map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                                          onChanged: (v) => tempEndYear = v!,
-                                          decoration: InputDecoration(
-                                            labelText: "End Year",
-                                            filled: true,
-                                            fillColor: Colors.grey[50],
-                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(ctx,{
-                                        "startMonth": tempStartMonth,
-                                        "startYear": tempStartYear,
-                                        "endMonth": tempEndMonth,
-                                        "endYear": tempEndYear,
-                                      });
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size.fromHeight(50),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: StatefulBuilder(
+                                builder: (context, setDurationState) => Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      "Select Duration",
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                     ),
-                                    child: const Text("Confirm", style: TextStyle(fontSize: 16)),
-                                  ),
-                                ],
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: tempStartMonth.isEmpty ? null : tempStartMonth,
+                                            items: months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                                            onChanged: (v) => setDurationState(() => tempStartMonth = v!),
+                                            decoration: InputDecoration(
+                                              labelText: "Start Month",
+                                              filled: true,
+                                              fillColor: Colors.grey.shade100,
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: tempStartYear.isEmpty ? null : tempStartYear,
+                                            items: years().map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                                            onChanged: (v) => setDurationState(() => tempStartYear = v!),
+                                            decoration: InputDecoration(
+                                              labelText: "Start Year",
+                                              filled: true,
+                                              fillColor: Colors.grey.shade100,
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    CheckboxListTile(
+                                      title: const Text("Present"),
+                                      value: isPresent,
+                                      onChanged: (val) => setDurationState(() {
+                                        isPresent = val ?? false;
+                                        if (isPresent) {
+                                          tempEndMonth = "Present";
+                                          tempEndYear = "";
+                                        }
+                                      }),
+                                      controlAffinity: ListTileControlAffinity.leading,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: isPresent ? null : (tempEndMonth.isEmpty ? null : tempEndMonth),
+                                            items: [...months.map((m) => DropdownMenuItem(value: m, child: Text(m))), const DropdownMenuItem(value: "Present", child: Text("Present"))],
+                                            onChanged: isPresent ? null : (v) => setDurationState(() => tempEndMonth = v!),
+                                            decoration: InputDecoration(
+                                              labelText: "End Month",
+                                              filled: true,
+                                              fillColor: Colors.grey.shade100,
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: DropdownButtonFormField<String>(
+                                            value: isPresent ? null : (tempEndYear.isEmpty ? null : tempEndYear),
+                                            items: years().map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                                            onChanged: isPresent ? null : (v) => setDurationState(() => tempEndYear = v!),
+                                            decoration: InputDecoration(
+                                              labelText: "End Year",
+                                              filled: true,
+                                              fillColor: Colors.grey.shade100,
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx, {
+                                          "startMonth": tempStartMonth,
+                                          "startYear": tempStartYear,
+                                          "endMonth": isPresent ? "Present" : tempEndMonth,
+                                          "endYear": isPresent ? "" : tempEndYear,
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(50),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: const Text("Confirm", style: TextStyle(fontSize: 16)),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -354,22 +490,37 @@ Future<void> showAddEditBottomSheet(
                           height: 52,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: Colors.grey.shade300),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
                           ),
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            controllers["startMonth"]!.text.isEmpty
-                                ? "Duration"
-                                : "${controllers["startMonth"]!.text} ${controllers["startYear"]!.text} - ${controllers["endMonth"]!.text} ${controllers["endYear"]!.text}",
-                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                controllers["startMonth"]!.text.isEmpty
+                                    ? "Select Duration"
+                                    : "${controllers["startMonth"]!.text} ${controllers["startYear"]!.text} - ${controllers["endMonth"]!.text} ${controllers["endYear"]!.text}",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: controllers["startMonth"]!.text.isEmpty ? Colors.grey.shade600 : Colors.black87,
+                                ),
+                              ),
+                              const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ],
-
                   // -------------------- Save Button --------------------
                   SizedBox(
                     width: double.infinity,

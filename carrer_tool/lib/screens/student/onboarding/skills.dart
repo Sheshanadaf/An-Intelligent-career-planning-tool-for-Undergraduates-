@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/student_onboarding_provider.dart';
-import 'widgets/skill_chip.dart';
 
 class SkillsScreen extends StatefulWidget {
   final VoidCallback onFinish;
-  const SkillsScreen({super.key, required this.onFinish});
+  final VoidCallback onBack; // Added back callback
+
+  const SkillsScreen({
+    super.key,
+    required this.onFinish,
+    required this.onBack,
+  });
 
   @override
   State<SkillsScreen> createState() => _SkillsScreenState();
@@ -14,6 +19,14 @@ class SkillsScreen extends StatefulWidget {
 class _SkillsScreenState extends State<SkillsScreen> {
   final TextEditingController _skillCtl = TextEditingController();
   List<String> skills = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
+    // Load previously saved skills
+    skills = List<String>.from(provider.skills);
+  }
 
   void addSkill() {
     final skill = _skillCtl.text.trim();
@@ -44,6 +57,20 @@ class _SkillsScreenState extends State<SkillsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: widget.onBack, // Use wrapper's back
+        ),
+        title: const Text(
+          "Skills",
+          style: TextStyle(color: Colors.black87),
+        ),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -53,7 +80,6 @@ class _SkillsScreenState extends State<SkillsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
                     const Text(
                       "Skills",
                       style: TextStyle(

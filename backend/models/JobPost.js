@@ -21,7 +21,10 @@ const JobPostSchema = new mongoose.Schema({
     certifications: { type: Number, default: 0 },
     projects: { type: Number, default: 0 },
   },
-
+  embedding: {
+    type: [Number], // stores precomputed embedding vector
+    default: []
+  },
   // 🆕 store which students have added this job
   appliedUsers: [
     {

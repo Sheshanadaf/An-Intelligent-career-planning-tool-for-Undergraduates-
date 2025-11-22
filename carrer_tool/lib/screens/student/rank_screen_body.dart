@@ -225,36 +225,44 @@ class _RankScreenBodyState extends State<RankScreenBody>
                   child: Column(
                     children: [
                       // Company Dropdown
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: "Select Company",
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          dialogBackgroundColor: Colors.white,
+                          canvasColor: Colors.white,
                         ),
-                        value: selectedCompany,
-                        items: companies
-                            .map((c) =>
-                                DropdownMenuItem(value: c, child: Text(c)))
-                            .toList(),
-                        onChanged: (val) {
-                          setState(() => selectedCompany = val);
-                          fetchJobRoles(val!);
-                        },
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: "Select Company",
+                          ),
+                          value: selectedCompany,
+                          items: companies
+                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() => selectedCompany = val);
+                            fetchJobRoles(val!);
+                          },
+                        ),
                       ),
-                      const SizedBox(height: 16),
-
                       // Job Role Dropdown
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: "Select Job Role",
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          dialogBackgroundColor: Colors.white,
+                          canvasColor: Colors.white,
                         ),
-                        value: selectedJobRole,
-                        items: jobRoles
-                            .map((r) =>
-                                DropdownMenuItem(value: r, child: Text(r)))
-                            .toList(),
-                        onChanged: (val) {
-                          setState(() => selectedJobRole = val);
-                          loadJobDetails();
-                        },
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: "Select Job Role",
+                          ),
+                          value: selectedJobRole,
+                          items: jobRoles
+                              .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() => selectedJobRole = val);
+                            loadJobDetails();
+                          },
+                        ),
                       ),
 
                       const SizedBox(height: 20),

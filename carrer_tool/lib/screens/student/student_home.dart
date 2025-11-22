@@ -84,89 +84,89 @@ class _StudentHomeState extends State<StudentHome> {
   }
 
   /// ------------------- Section Builders -------------------
-  Widget _buildSection(String type, List items) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 13),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+  /// ------------------- Section Builders -------------------
+Widget _buildSection(String type, String label, List items) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 13),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      type,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.2,
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    label, // <-- Use label here for display
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.2,
                     ),
-                  ],
-                ),
-                IconButton(
-                  onPressed: () =>
-                      showAddEditBottomSheet(context, type.toLowerCase()),
-                  icon: const Icon(Icons.add, color: kPrimaryColor),
-                )
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => showAddEditBottomSheet(context, type.toLowerCase()), 
+                icon: const Icon(Icons.add, color: kPrimaryColor),
+              )
+            ],
+          ),
+        ),
+
+        // Empty state
+        if (items.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3))
               ],
+            ),
+            child: const Center(
+              child: Text(
+                "No items added yet",
+                style: TextStyle(color: Colors.black54, fontSize: 14),
+              ),
             ),
           ),
 
-          // Empty state
-          if (items.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3))
-                ],
-              ),
-              child: const Center(
-                child: Text(
-                  "No items added yet",
-                  style: TextStyle(color: Colors.black54, fontSize: 14),
-                ),
-              ),
-            ),
-
-          // Section Items
-          ...items.asMap().entries.map((entry) {
-            return CollapsibleCard(
-              type: type.toLowerCase(),
-              data: Map<String, dynamic>.from(entry.value)
-                ..putIfAbsent('userId', () => userId),
-              index: entry.key,
-              expandedMap: _expandedMap,
-              cardColor: Colors.white,
-              textColor: Colors.black87,
-              iconColor: kPrimaryColor,
-              deleteIconColor: Colors.red,
-            );
-          }),
-        ],
-      ),
-    );
-  }
+        // Section Items
+        ...items.asMap().entries.map((entry) {
+          return CollapsibleCard(
+            type: type.toLowerCase(), // backend key for logic
+            data: Map<String, dynamic>.from(entry.value)
+              ..putIfAbsent('userId', () => userId),
+            index: entry.key,
+            expandedMap: _expandedMap,
+            cardColor: Colors.white,
+            textColor: Colors.black87,
+            iconColor: kPrimaryColor,
+            deleteIconColor: Colors.red,
+          );
+        }),
+      ],
+    ),
+  );
+}
 
   Widget _buildSkillsSection(List<String> skills) {
     return SkillsSection(
@@ -228,7 +228,10 @@ class _StudentHomeState extends State<StudentHome> {
               }
               Navigator.pop(context);
             },
-            child: const Text("Add"),
+            child: const Text(
+              "Add",
+              style: TextStyle(color: Colors.white), // <-- set text color to white
+            ),
           ),
         ],
       ),
@@ -253,31 +256,40 @@ class _StudentHomeState extends State<StudentHome> {
         return UniversityRankingScreenBody(userId: userId!);
       case "home":
       default:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ProfileHeader(
-                userId: userId!,
-                imageUrl: profile['imageUrl'],
-                name: profile['name'],
-                bio: profile['bio'],
-                location: profile['location'],
-                onUpdated: (newProfile) async {
-                  await provider.fetchProfile(userId!);
-                  if (mounted) setState(() {});
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildSection("Education", profile['education'] ?? []),
-              _buildSection("Licenses", profile['licenses'] ?? []),
-              _buildSection("Projects", profile['projects'] ?? []),
-              _buildSection("Volunteering", profile['volunteering'] ?? []),
-              _buildSkillsSection(skillsList),
-            ],
-          ),
-        );
+        return GestureDetector(
+  behavior: HitTestBehavior.translucent, // important to detect taps on empty space
+  onTap: () {
+    setState(() {
+      _expandedMap.clear(); // collapse all cards
+    });
+  },
+  child: SingleChildScrollView(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ProfileHeader(
+          userId: userId!,
+          imageUrl: profile['imageUrl'],
+          name: profile['name'],
+          bio: profile['bio'],
+          location: profile['location'],
+          onUpdated: (newProfile) async {
+            await provider.fetchProfile(userId!);
+            if (mounted) setState(() {});
+          },
+        ),
+        const SizedBox(height: 10),
+        _buildSection("education", "Education", profile['education'] ?? []),
+        _buildSection("licenses", "Certifications & Badges", profile['licenses'] ?? []),
+        _buildSection("projects", "Projects", profile['projects'] ?? []),
+        _buildSection("volunteering", "Volunteering", profile['volunteering'] ?? []),
+        _buildSkillsSection(skillsList),
+      ],
+    ),
+  ),
+);
+
     }
   }
 

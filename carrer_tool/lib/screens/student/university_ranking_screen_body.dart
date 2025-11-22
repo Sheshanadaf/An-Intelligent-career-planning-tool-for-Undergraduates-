@@ -135,12 +135,10 @@ class _UniversityRankingScreenBodyState
         Positioned(
           bottom: 20,
           right: 20,
-          child: FloatingActionButton.extended(
+          child: FloatingActionButton.small(
             onPressed: _showAddUniversityDialog,
-            icon: const Icon(Icons.add),
-            label: const Text("Add University"),
+            child: const Icon(Icons.add, color: Colors.white),
             backgroundColor: Colors.blue.shade700,
-            foregroundColor: Colors.white,
           ),
         ),
       ],

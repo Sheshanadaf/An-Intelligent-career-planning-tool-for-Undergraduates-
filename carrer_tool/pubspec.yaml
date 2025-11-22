@@ -44,6 +44,7 @@ dependencies:
   shared_preferences: ^2.5.3
   dio: ^5.9.0
   url_launcher: ^6.3.2
+  dropdown_search: ^6.0.2
 
 dev_dependencies:
   flutter_test:

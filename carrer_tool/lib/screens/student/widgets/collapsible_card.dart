@@ -152,18 +152,29 @@ class _CollapsibleCardState extends State<CollapsibleCard> {
       switch (widget.type) {
         case "education":
           details.add(Text(
-            "${widget.data['degree'] ?? ''}   |   ${widget.data['field'] ?? ''} Field",
+            "${widget.data['degree'] ?? ''}   |   ${widget.data['field'] ?? ''}",
             style: TextStyle(color: widget.textColor ?? Colors.black),
           ));
           details.add(Text(
-            "CGPA - ${widget.data['gpa'] ?? ''}",
+            "Year: ${widget.data['year'] ?? ''}",
+            style: TextStyle(color: widget.textColor ?? Colors.black),
+          ));
+          details.add(Text(
+            "CGPA: ${widget.data['gpa'] ?? ''}",
             style: TextStyle(color: widget.textColor ?? Colors.black),
           ));
           details.add(Text(getEducationDuration(),
               style: TextStyle(color: widget.textColor ?? Colors.black54)));
           if ((widget.data['description'] ?? '').isNotEmpty) {
-            details.add(Text(widget.data['description'],
-                style: TextStyle(color: widget.textColor ?? Colors.black54)));
+            details.add(
+              Text(
+                widget.data['description'],
+                textAlign: TextAlign.justify,   // <-- Justify alignment
+                style: TextStyle(
+                  color: widget.textColor ?? Colors.black54,
+                ),
+              ),
+            );
           }
           // Edit/Delete buttons for education
           details.add(Row(

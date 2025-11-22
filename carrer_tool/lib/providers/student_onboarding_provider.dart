@@ -14,6 +14,7 @@ class StudentOnboardingProvider extends ChangeNotifier {
     "bio": "",
     "location": "",
     "imageUrl": "",
+    "imageFile": null,
     "education": [],
     "skills": [],
     "licenses": [],
@@ -23,7 +24,7 @@ class StudentOnboardingProvider extends ChangeNotifier {
 
   String selectedPage = "home";
 
-  // ---------------- Remove Methods ----------------
+  // ================== REMOVE METHODS ==================
   void removeEducation(int index) {
     studentProfile["education"].removeAt(index);
     notifyListeners();
@@ -49,7 +50,7 @@ class StudentOnboardingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Set Methods ----------------
+  // ================== SET METHODS ==================
   void setPersonalInfo({
     required String name,
     required String bio,
@@ -88,7 +89,20 @@ class StudentOnboardingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Fetch Profile ----------------
+  // ================== ONBOARDING HELPER GETTERS ==================
+  Map<String, dynamic> get personalInfo => {
+        "name": studentProfile["name"],
+        "bio": studentProfile["bio"],
+        "location": studentProfile["location"],
+        "imageFile": studentProfile["imageFile"],
+      };
+
+  List<Map<String, dynamic>> get education =>
+      List<Map<String, dynamic>>.from(studentProfile["education"]);
+
+  List<String> get skills => List<String>.from(studentProfile["skills"]);
+
+  // ================== FETCH PROFILE ==================
   Future<void> fetchProfile(String userId) async {
     try {
       final res = await http.get(Uri.parse("$baseUrl/student/profile/$userId"));
@@ -99,6 +113,7 @@ class StudentOnboardingProvider extends ChangeNotifier {
           "bio": data["bio"] ?? "",
           "location": data["location"] ?? "",
           "imageUrl": data["imageUrl"] ?? "",
+          "imageFile": null,
           "education": List<Map<String, dynamic>>.from(data["education"] ?? []),
           "skills": List<String>.from(data["skills"] ?? []),
           "licenses": List<Map<String, dynamic>>.from(data["licenses"] ?? []),
@@ -114,16 +129,13 @@ class StudentOnboardingProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------- Update Profile ----------------
+  // ================== UPDATE PROFILE ==================
   Future<bool> updateProfile() async {
     const String url = "http://10.0.2.2:4000/api/student/profile/update";
     final token = await storage.read(key: 'accessToken');
     final userId = await storage.read(key: 'userId');
 
-    if (token == null || userId == null) {
-      debugPrint("❌ Missing token or userId");
-      return false;
-    }
+    if (token == null || userId == null) return false;
 
     try {
       final request = http.MultipartRequest('PUT', Uri.parse(url));
@@ -153,12 +165,10 @@ class StudentOnboardingProvider extends ChangeNotifier {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("📩 Profile updated -> ${request.fields}");
-      debugPrint("✅ Response: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        studentProfile["imageUrl"] = data['profile']['imageUrl'] ?? studentProfile["imageUrl"];
+        studentProfile["imageUrl"] =
+            data['profile']['imageUrl'] ?? studentProfile["imageUrl"];
         notifyListeners();
         return true;
       } else {
@@ -171,35 +181,13 @@ class StudentOnboardingProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------- Clear Profile ----------------
-void clearProfile() {
-  studentProfile = {
-    "name": "",
-    "bio": "",
-    "location": "",
-    "imageUrl": "",
-    "education": [],
-    "skills": [],
-    "licenses": [],
-    "projects": [],
-    "volunteering": [],
-  };
-  selectedPage = "home";
-  notifyListeners();
-  debugPrint("🧹 Student profile cleared");
-}
-
-
-  // ---------------- Submit Profile ----------------
+  // ================== SUBMIT PROFILE ==================
   Future<bool> submitProfile() async {
     const String url = "http://10.0.2.2:4000/api/student/profile";
     final token = await storage.read(key: 'accessToken');
     final userId = await storage.read(key: 'userId');
 
-    if (token == null || userId == null) {
-      debugPrint("❌ Missing token or userId");
-      return false;
-    }
+    if (token == null || userId == null) return false;
 
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url));
@@ -229,9 +217,6 @@ void clearProfile() {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("📩 Profile submitted -> ${request.fields}");
-      debugPrint("✅ Response: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         studentProfile["imageUrl"] = data['profile']['imageUrl'] ?? "";
@@ -245,5 +230,23 @@ void clearProfile() {
       debugPrint("❌ Error submitting profile: $e");
       return false;
     }
+  }
+
+  // ================== CLEAR PROFILE ==================
+  void clearProfile() {
+    studentProfile = {
+      "name": "",
+      "bio": "",
+      "location": "",
+      "imageUrl": "",
+      "imageFile": null,
+      "education": [],
+      "skills": [],
+      "licenses": [],
+      "projects": [],
+      "volunteering": [],
+    };
+    selectedPage = "home";
+    notifyListeners();
   }
 }

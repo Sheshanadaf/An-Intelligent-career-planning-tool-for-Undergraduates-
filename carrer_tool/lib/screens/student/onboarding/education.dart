@@ -5,20 +5,49 @@ import 'widgets/add_education_card.dart';
 
 class EducationScreen extends StatefulWidget {
   final VoidCallback onNext;
-  const EducationScreen({super.key, required this.onNext});
+  final VoidCallback onBack; // Added back callback
+
+  const EducationScreen({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+  });
 
   @override
   State<EducationScreen> createState() => _EducationScreenState();
 }
 
-class _EducationScreenState extends State<EducationScreen> with TickerProviderStateMixin {
+class _EducationScreenState extends State<EducationScreen> {
   final _formKey = GlobalKey<FormState>();
   final List<Map<String, TextEditingController>> _educationList = [];
 
   @override
   void initState() {
     super.initState();
-    _educationList.add(_createEmptyEducation());
+    final provider = Provider.of<StudentOnboardingProvider>(context, listen: false);
+
+    // Load previously saved education if exists
+    if (provider.education.isNotEmpty) {
+      for (var edu in provider.education) {
+        _educationList.add({
+          "school": TextEditingController(text: edu["school"] ?? ""),
+          "degree": TextEditingController(text: edu["degree"] ?? ""),
+          "field": TextEditingController(text: edu["field"] ?? ""),
+          "gpa": TextEditingController(text: edu["gpa"] ?? ""),
+          "description": TextEditingController(text: edu["description"] ?? ""),
+          "year": TextEditingController(text: edu["year"] ?? ""),
+          "startMonth": TextEditingController(text: edu["startMonth"] ?? ""),
+          "startYear": TextEditingController(text: edu["startYear"] ?? ""),
+          "endMonth": TextEditingController(text: edu["endMonth"] ?? ""),
+          "endYear": TextEditingController(text: edu["endYear"] ?? ""),
+        });
+      }
+    }
+
+    // If no previous education, add one empty
+    if (_educationList.isEmpty) {
+      _educationList.add(_createEmptyEducation());
+    }
   }
 
   Map<String, TextEditingController> _createEmptyEducation() => {
@@ -64,13 +93,27 @@ class _EducationScreenState extends State<EducationScreen> with TickerProviderSt
         }).toList();
 
     provider.setEducation(data);
-    widget.onNext();
+    widget.onNext(); // move forward
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: widget.onBack, // use wrapper's back
+        ),
+        title: const Text(
+          "Education",
+          style: TextStyle(color: Colors.black87),
+        ),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -78,7 +121,8 @@ class _EducationScreenState extends State<EducationScreen> with TickerProviderSt
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -121,7 +165,8 @@ class _EducationScreenState extends State<EducationScreen> with TickerProviderSt
                       Center(
                         child: TextButton.icon(
                           onPressed: _addEducation,
-                          icon: const Icon(Icons.add_circle_outline, color: Color(0xFF3B82F6)),
+                          icon: const Icon(Icons.add_circle_outline,
+                              color: Color(0xFF3B82F6)),
                           label: const Text(
                             "Add Education",
                             style: TextStyle(
@@ -139,7 +184,8 @@ class _EducationScreenState extends State<EducationScreen> with TickerProviderSt
 
               // Next Button fixed
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 16),
                 child: SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -153,7 +199,10 @@ class _EducationScreenState extends State<EducationScreen> with TickerProviderSt
                     onPressed: _saveAndNext,
                     child: const Text(
                       "Next",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white),
                     ),
                   ),
                 ),

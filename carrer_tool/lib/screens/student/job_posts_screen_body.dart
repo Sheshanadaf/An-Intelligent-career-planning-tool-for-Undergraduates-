@@ -31,29 +31,53 @@ class _JobPostsScreenBodyState extends State<JobPostsScreenBody>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) _loadJobs();
-    });
+  if (!_tabController.indexIsChanging) {
+    // Only display cached jobs if available
+    if ((_tabController.index == 0 && allJobs.isNotEmpty) ||
+        (_tabController.index == 1 && recommendedJobs.isNotEmpty) ||
+        (_tabController.index == 2 && addedJobs.isNotEmpty)) {
+      setState(() {
+        displayedJobs = _tabController.index == 0
+            ? allJobs
+            : _tabController.index == 1
+                ? recommendedJobs
+                : addedJobs;
+      });
+    } else {
+      // Otherwise, load from API
+      _loadJobs();
+    }
+  }
+});
+
     _loadJobs();
   }
 
-  Future<void> _loadJobs() async {
-    setState(() => isLoading = true);
-    try {
-      if (_tabController.index == 0) {
+  Future<void> _loadJobs({bool forceRefresh = false}) async {
+  setState(() => isLoading = true);
+  try {
+    if (_tabController.index == 0) {
+      if (allJobs.isEmpty || forceRefresh) {
         allJobs = await api.fetchAllJobs();
-        displayedJobs = allJobs;
-      } else if (_tabController.index == 1) {
-        recommendedJobs = [];
-        displayedJobs = recommendedJobs;
-      } else {
-        addedJobs = await api.fetchAddedJobs(widget.userId);
-        displayedJobs = addedJobs;
       }
-    } catch (e) {
-      debugPrint("Error fetching jobs: $e");
+      displayedJobs = allJobs;
+    } else if (_tabController.index == 1) {
+      if (recommendedJobs.isEmpty || forceRefresh) {
+        recommendedJobs = await api.fetchRecommendedJobs(widget.userId);
+      }
+      displayedJobs = recommendedJobs;
+    } else {
+      if (addedJobs.isEmpty || forceRefresh) {
+        addedJobs = await api.fetchAddedJobs(widget.userId);
+      }
+      displayedJobs = addedJobs;
     }
-    setState(() => isLoading = false);
+  } catch (e) {
+    debugPrint("Error fetching jobs: $e");
   }
+  setState(() => isLoading = false);
+}
+
 
   void _filterJobs() {
     final list = _tabController.index == 0
@@ -397,34 +421,49 @@ class _JobPostsScreenBodyState extends State<JobPostsScreenBody>
               ),
             ),
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : displayedJobs.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No job posts available.",
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadJobs,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          itemCount: displayedJobs.length,
-                          itemBuilder: (context, index) {
-                            final job = displayedJobs[index];
-                            final id = job['_id']?.toString() ?? 'idx_$index';
-                            entryExpandedMap.putIfAbsent(id, () => false);
+  child: isLoading
+      ? Center(
+          child: _tabController.index == 1
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 12),
+                    Text(
+                      "Please wait, loading recommended jobs...",
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                  ],
+                )
+              : const CircularProgressIndicator(),
+        )
+      : displayedJobs.isEmpty
+          ? const Center(
+              child: Text(
+                "No job posts available.",
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () => _loadJobs(forceRefresh: true),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                itemCount: displayedJobs.length,
+                itemBuilder: (context, index) {
+                  final job = displayedJobs[index];
+                  final id = job['_id']?.toString() ?? 'idx_$index';
+                  entryExpandedMap.putIfAbsent(id, () => false);
 
-                            return _buildJobCard(
-                              Map<String, dynamic>.from(job),
-                              isAddedTab: _tabController.index == 2,
-                              index: index,
-                            );
-                          },
-                        ),
-                      ),
-          ),
+                  return _buildJobCard(
+                    Map<String, dynamic>.from(job),
+                    isAddedTab: _tabController.index == 2,
+                    index: index,
+                  );
+                },
+              ),
+            ),
+)
+
         ],
       ),
     );

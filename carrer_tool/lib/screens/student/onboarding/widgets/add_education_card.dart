@@ -167,33 +167,99 @@ class _AddEducationCardState extends State<AddEducationCard>
 }
 
   Widget buildUniversityDropdown() {
-    if (_loadingUniversities) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: LinearProgressIndicator(),
-      );
-    }
+  return GestureDetector(
+    onTap: () async {
+      if (_loadingUniversities) return;
 
-    if (_universities.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text("No universities found", style: TextStyle(color: Colors.grey)),
-      );
-    }
+      List<String> filteredUniversities = List.from(_universities);
+      String searchQuery = '';
 
-    return DropdownButtonFormField<String>(
-      value: widget.school.text.isEmpty ? null : widget.school.text,
-      items: _universities.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
-      onChanged: (v) => setState(() => widget.school.text = v ?? ""),
-      validator: (v) {
-        if (!widget.requireValidation) return null;
-        if (v == null || v.trim().isEmpty) return "School is required";
-        return null;
-      },
-      decoration: _dropdownDecoration("School / University"),
-      dropdownColor: Colors.white, // dropdown menu white
-    );
-  }
+      final selected = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) => StatefulBuilder(
+          builder: (context, setSheetState) => Padding(
+            padding: EdgeInsets.only(
+              top: 16,
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search university",
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    searchQuery = val.toLowerCase();
+                    setSheetState(() {
+                      filteredUniversities = _universities
+                          .where((u) => u.toLowerCase().contains(searchQuery))
+                          .toList();
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 300, // limit dropdown height
+                  child: filteredUniversities.isEmpty
+                      ? const Center(child: Text("No universities found"))
+                      : ListView.separated(
+                          itemCount: filteredUniversities.length,
+                          separatorBuilder: (_, __) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final uni = filteredUniversities[index];
+                            return ListTile(
+                              title: Text(
+                                uni,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              onTap: () => Navigator.pop(context, uni),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      if (selected != null) {
+        setState(() {
+          widget.school.text = selected;
+        });
+      }
+    },
+    child: Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey),
+      ),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        widget.school.text.isEmpty ? "Select School / University" : widget.school.text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis, // avoids overflow
+        style: const TextStyle(fontSize: 14, color: Colors.black87),
+      ),
+    ),
+  );
+}
 
   Widget buildMonthYearRangePicker() {
     return GestureDetector(

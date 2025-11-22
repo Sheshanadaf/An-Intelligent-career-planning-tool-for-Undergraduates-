@@ -1,129 +1,99 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class JobPostsApi {
-  final String baseUrl = "http://10.0.2.2:4000"; // 🔧 Change if needed
+  final String baseUrl = "http://10.0.2.2:4000"; // adjust if needed
 
   // 🟢 Get all job posts
   Future<List<dynamic>> fetchAllJobs() async {
     try {
       final res = await http.get(Uri.parse("$baseUrl/api/jobpost"));
-
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        print("📦 Received Job Posts (${data.length} items):");
-        print(data);
         return data;
       } else {
-        print("❌ Failed to fetch job posts. Status: ${res.statusCode}");
-        print("Response body: ${res.body}");
-        throw Exception("Failed to fetch job posts");
+        throw Exception("Failed to fetch job posts: ${res.statusCode}");
       }
     } catch (e) {
-      print("⚠️ Error fetching all jobs: $e");
+      debugPrint("⚠️ Error fetching all jobs: $e");
       rethrow;
     }
   }
 
-  // 🟢 Add job to user’s profile
+  Future<List<dynamic>> fetchRecommendedJobs(String userId) async {
+  try {
+    final res = await http.get(Uri.parse("$baseUrl/api/jobPost/recommend/$userId"));
+    print("📥 HTTP GET /jobPosts/recommend/$userId -> Status: ${res.statusCode}");
+    print("📦 Response body: ${res.body}");
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      print("💡 Parsed JSON type: ${data.runtimeType}");
+
+      // Extract the array from your JSON object
+      if (data is Map<String, dynamic> && data.containsKey('recommendedJobs')) {
+        print("✅ Found recommendedJobs array with length: ${data['recommendedJobs'].length}");
+        return data['recommendedJobs'] as List<dynamic>;
+      }
+
+      print("⚠️ No 'recommendedJobs' key found in response.");
+      return [];
+    } else {
+      debugPrint("❌ Failed to fetch recommended jobs: ${res.statusCode}");
+      return [];
+    }
+  } catch (e) {
+    debugPrint("⚠️ Error fetching recommended jobs: $e");
+    return [];
+  }
+}
+
+  // 🟡 Get jobs added by user
+  Future<List<dynamic>> fetchAddedJobs(String userId) async {
+    try {
+      final res = await http.get(Uri.parse("$baseUrl/api/jobpost/jobs/$userId"));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data.containsKey('jobPosts')) {
+          return data['jobPosts'];
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint("⚠️ Error fetching added jobs: $e");
+      return [];
+    }
+  }
+
+  // 🔵 Add job to user
   Future<bool> addJobToUser(String userId, String jobPostId) async {
     try {
       final res = await http.put(
         Uri.parse("$baseUrl/api/jobpost"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "userId": userId,
-          "jobPostId": jobPostId,
-        }),
+        body: jsonEncode({"userId": userId, "jobPostId": jobPostId}),
       );
-
-      if (res.statusCode == 200) {
-        print("✅ Job added successfully: ${res.body}");
-        return true;
-      } else {
-        print("❌ Failed to add job: ${res.statusCode} -> ${res.body}");
-        return false;
-      }
+      return res.statusCode == 200;
     } catch (e) {
-      print("⚠️ Error adding job: $e");
+      debugPrint("⚠️ Error adding job: $e");
       return false;
     }
   }
 
-  // 🟣 Get recommended jobs for a specific user
-  Future<List<dynamic>> fetchRecommendedJobs(String userId) async {
-    try {
-      final res = await http.get(
-        Uri.parse("$baseUrl/api/jobpostp/recommended/$userId"),
-      );
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        print("💡 Recommended Jobs: ${data.length}");
-        return data;
-      } else {
-        print("❌ Failed to fetch recommended jobs: ${res.statusCode}");
-        throw Exception("Failed to fetch recommended jobs");
-      }
-    } catch (e) {
-      print("⚠️ Error fetching recommended jobs: $e");
-      rethrow;
-    }
-  }
-
-  // 🟡 Get all jobs added by the user
-  Future<List<dynamic>> fetchAddedJobs(String userId) async {
-  try {
-    final res = await http.get(
-      Uri.parse("$baseUrl/api/jobpost/jobs/$userId"),
-    );
-
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-
-      // ✅ Directly read the jobPosts array
-      if (data is Map<String, dynamic> && data.containsKey('jobPosts')) {
-        final List<dynamic> jobs = data['jobPosts'];
-        print("📋 User's added jobs (${jobs.length} items):");
-        return jobs;
-      }
-
-      print("⚠️ Unexpected response format: $data");
-      return [];
-    } else {
-      print("❌ Failed to fetch user's added jobs: ${res.statusCode}");
-      print("Response: ${res.body}");
-      return [];
-    }
-  } catch (e) {
-    print("⚠️ Error fetching user's added jobs: $e");
-    return [];
-  }
-}
-
-
-
-  // 🔴 Remove job from user’s added list
+  // 🔴 Remove job from user
   Future<bool> removeJobFromUser(String userId, String jobPostId) async {
     try {
       final res = await http.delete(
         Uri.parse("$baseUrl/api/jobpost/remove"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "userId": userId,
-          "jobPostId": jobPostId,
-        }),
+        body: jsonEncode({"userId": userId, "jobPostId": jobPostId}),
       );
-
-      if (res.statusCode == 200) {
-        print("🗑️ Job removed successfully: ${res.body}");
-        return true;
-      } else {
-        print("❌ Failed to remove job: ${res.statusCode} -> ${res.body}");
-        return false;
-      }
+      return res.statusCode == 200;
     } catch (e) {
-      print("⚠️ Error removing job: $e");
+      debugPrint("⚠️ Error removing job: $e");
       return false;
     }
   }

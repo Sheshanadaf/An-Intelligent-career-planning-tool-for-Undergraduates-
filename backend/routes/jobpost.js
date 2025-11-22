@@ -1,6 +1,8 @@
 const express = require("express");
 const JobPost = require("../models/JobPost");
 const StudentProfile = require("../models/StudentProfile");
+const { spawn } = require('child_process');
+const path = require("path");
 
 const router = express.Router();
 
@@ -190,46 +192,42 @@ router.delete("/:postId", async (req, res) => {
 });
 
 
-// 🟢 Create new job post
 router.post("/", async (req, res) => {
   try {
-    console.log("📥 Incoming Job Post:", req.body);
-
-    const {
-      companyId,
-      companyName,
-      companyReg,
-      jobRole,
-      description,
-      skills,
-      certifications,
-      details,
-      weights,
-      companyLogo
-    } = req.body;
+    const { companyId, companyName, companyReg, jobRole, description, skills, certifications, details, weights, companyLogo } = req.body;
 
     if (!companyId || !companyName || !jobRole) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Step 1: create job without embedding first
     const newJobPost = new JobPost({
-      companyId,
-      companyName,
-      companyReg,
-      jobRole,
-      description,
-      skills,
-      certifications,
-      details,
-      weights,
-      companyLogo
+      companyId, companyName, companyReg, jobRole, description, skills, certifications, details, weights, companyLogo
     });
 
     await newJobPost.save();
 
-    res
-      .status(201)
-      .json({ message: "Job post created successfully", jobPost: newJobPost });
+    // Step 2: prepare text for embedding
+    const jobText = `${jobRole}. ${description}. ${skills}. ${certifications}`;
+
+    // Step 3: call Python script
+    const py = spawn("C:\\fyp\\backend\\job_recommender\\venv\\Scripts\\python.exe", ["compute_embedding.py", jobText]);
+
+
+    py.stdout.on('data', async (data) => {
+      const embedding = JSON.parse(data.toString());
+
+      // Step 4: update job with embedding
+      await JobPost.findByIdAndUpdate(newJobPost._id, { embedding });
+      console.log("Embedding saved for job:", newJobPost._id);
+    });
+
+    py.stderr.on('data', (err) => {
+      console.error("Python error:", err.toString());
+    });
+
+    res.status(201).json({ message: "Job post created successfully", jobPost: newJobPost });
+
   } catch (error) {
     console.error("❌ Error creating job post:", error);
     res.status(500).json({ message: "Server error", error });
@@ -271,6 +269,7 @@ router.put("/:id", async (req, res) => {
     console.log(`✏️ Updating job post ID: ${id}`);
     console.log("📥 New Data:", req.body);
 
+    // 1️⃣ Update the job fields
     const updatedPost = await JobPost.findByIdAndUpdate(
       id,
       {
@@ -285,20 +284,125 @@ router.put("/:id", async (req, res) => {
           companyReg: req.body.companyReg,
         },
       },
-      { new: true } // ✅ Return updated document
+      { new: true } // return updated document
     );
 
     if (!updatedPost) {
       return res.status(404).json({ message: "Job post not found" });
     }
 
-    res
-      .status(200)
-      .json({ message: "Job post updated successfully", jobPost: updatedPost });
+    // 2️⃣ Prepare text for embedding
+    const jobText = `${updatedPost.jobRole}. ${updatedPost.description}. ${updatedPost.skills}. ${updatedPost.certifications}`;
+
+    // Absolute path to compute_embedding.py
+    const scriptPath = path.join(__dirname, "..", "job_recommender", "compute_embedding.py");
+
+    // Spawn Python using venv
+    const py = spawn(
+      "C:\\fyp\\backend\\job_recommender\\venv\\Scripts\\python.exe",
+      [scriptPath, jobText]
+    );
+
+    py.stdout.on("data", async (data) => {
+      try {
+        const embedding = JSON.parse(data.toString());
+
+        // 4️⃣ Update embedding in MongoDB
+        await JobPost.findByIdAndUpdate(updatedPost._id, { embedding });
+
+        console.log("✅ Embedding updated for job:", updatedPost._id);
+      } catch (err) {
+        console.error("❌ Error parsing embedding:", err);
+      }
+    });
+
+    py.stderr.on("data", (err) => {
+      console.error("❌ Python error:", err.toString());
+    });
+
+    // 5️⃣ Respond immediately (embedding updates asynchronously)
+    res.status(200).json({
+      message: "Job post updated successfully (embedding will update shortly)",
+      jobPost: updatedPost,
+    });
   } catch (error) {
     console.error("❌ Error updating job post:", error);
     res.status(500).json({ message: "Server error", error });
   }
 });
+
+// 🟢 Get top recommended jobs for a student
+router.get("/recommend/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log(`🔹 Fetching recommended jobs for student userId: ${userId}`);
+
+    // Find student profile
+    const studentProfile = await StudentProfile.findOne({ userId });
+    if (!studentProfile) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+
+    // Absolute path to recommend_jobs.py
+    const scriptPath = path.join(__dirname, "..", "job_recommender", "recommend_jobs.py");
+
+    // Spawn Python script and pass student _id as argument
+    const py = spawn(
+      "C:\\fyp\\backend\\job_recommender\\venv\\Scripts\\python.exe",
+      [scriptPath, studentProfile._id.toString()]
+    );
+
+    let dataString = "";
+
+    py.stdout.on("data", (data) => {
+      dataString += data.toString();
+    });
+
+    py.stderr.on("data", (err) => {
+      console.error("❌ Python error:", err.toString());
+    });
+
+    py.on("close", async (code) => {
+      if (code !== 0) {
+        console.error(`❌ Python script exited with code ${code}`);
+        return res.status(500).json({ message: "Error running recommendation script" });
+      }
+
+      try {
+        const pythonResult = JSON.parse(dataString); // array of {_id, similarity, ...}
+
+        // Extract job IDs from Python result
+        const jobIds = pythonResult.map(j => j._id);
+
+        // Fetch full job documents from MongoDB
+        const jobs = await JobPost.find({ _id: { $in: jobIds } });
+
+        // Merge similarity from Python result
+        const jobsWithSimilarity = jobs.map(job => {
+          const scoreObj = pythonResult.find(rj => rj._id === job._id.toString());
+          return {
+            ...job.toObject(), // full job data
+            similarity: scoreObj ? scoreObj.similarity : 0
+          };
+        });
+
+        // Optional: sort by similarity descending
+        jobsWithSimilarity.sort((a, b) => b.similarity - a.similarity);
+
+        res.status(200).json({ recommendedJobs: jobsWithSimilarity });
+
+      } catch (err) {
+        console.error("❌ Error parsing Python output:", err);
+        res.status(500).json({ message: "Failed to parse recommendation result" });
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching recommended jobs:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
 
 module.exports = router;
