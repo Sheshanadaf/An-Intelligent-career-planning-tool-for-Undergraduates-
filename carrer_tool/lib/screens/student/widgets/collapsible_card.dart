@@ -9,6 +9,7 @@ class CollapsibleCard extends StatefulWidget {
   final Map<String, dynamic> data;
   final int index;
   final Map<String, bool> expandedMap;
+  final VoidCallback? onTap;
 
   final Color? cardColor;
   final Color? textColor;
@@ -16,23 +17,27 @@ class CollapsibleCard extends StatefulWidget {
   final Color? deleteIconColor;
 
   const CollapsibleCard({
-    super.key,
-    required this.type,
-    required this.data,
-    required this.index,
-    required this.expandedMap,
-    this.cardColor,
-    this.textColor,
-    this.iconColor,
-    this.deleteIconColor,
-  });
+  super.key,
+  required this.type,
+  required this.data,
+  required this.index,
+  required this.expandedMap,
+  this.onTap,
+  this.cardColor,
+  this.textColor,
+  this.iconColor,
+  this.deleteIconColor,
+});
+
 
   @override
   State<CollapsibleCard> createState() => _CollapsibleCardState();
 }
 
 class _CollapsibleCardState extends State<CollapsibleCard> {
-  bool get isExpanded => widget.expandedMap[widget.index.toString()] ?? false;
+  bool get isExpanded =>
+    widget.expandedMap["${widget.type}-${widget.index}"] ?? false;
+
 
   @override
   Widget build(BuildContext context) {
@@ -420,11 +425,8 @@ class _CollapsibleCardState extends State<CollapsibleCard> {
     }
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          widget.expandedMap[widget.index.toString()] = !isExpanded;
-        });
-      },
+      onTap: widget.onTap,
+
       child: Card(
         color: widget.cardColor ?? Colors.grey.shade800,
         margin: const EdgeInsets.symmetric(vertical: 8),

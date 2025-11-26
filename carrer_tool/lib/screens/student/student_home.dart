@@ -152,15 +152,28 @@ Widget _buildSection(String type, String label, List items) {
         // Section Items
         ...items.asMap().entries.map((entry) {
           return CollapsibleCard(
-            type: type.toLowerCase(), // backend key for logic
-            data: Map<String, dynamic>.from(entry.value)
-              ..putIfAbsent('userId', () => userId),
+            type: type.toLowerCase(),
+            data: Map<String, dynamic>.from(entry.value)..putIfAbsent('userId', () => userId),
             index: entry.key,
             expandedMap: _expandedMap,
             cardColor: Colors.white,
             textColor: Colors.black87,
             iconColor: kPrimaryColor,
             deleteIconColor: Colors.red,
+            onTap: () {
+              setState(() {
+                String cardKey = "${type.toLowerCase()}-${entry.key}";
+
+                bool wasExpanded = _expandedMap[cardKey] == true;
+
+                _expandedMap.clear();
+
+                if (!wasExpanded) {
+                  _expandedMap[cardKey] = true;
+                }
+
+              });
+            },
           );
         }),
       ],
