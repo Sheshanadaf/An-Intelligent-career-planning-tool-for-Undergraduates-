@@ -117,7 +117,7 @@ router.post("/", async (req, res) => {
         userId: profile.userId,
         name: profile.name,
         score: parseFloat(totalScore.toFixed(2)),
-        projects: projectMarks.length,
+        projects: numProjects,
         university: uniName || "",
         year: profile.education[0]?.year || 0,
       });

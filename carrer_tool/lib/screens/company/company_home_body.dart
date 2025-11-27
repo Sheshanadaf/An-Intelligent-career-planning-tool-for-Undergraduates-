@@ -303,7 +303,7 @@ Widget build(BuildContext context) {
         const SizedBox(height: 12),
         Text(widget.companyDis,
             style: const TextStyle(color: Colors.white70),
-            textAlign: TextAlign.center),
+            textAlign: TextAlign.justify),
         const SizedBox(height: 8),
         IconButton(
           onPressed: widget.onEditPressed,
