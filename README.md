@@ -1,0 +1,158 @@
+# 📘 **An Intelligent Career Planning Tool for IT Undergraduates in Sri Lanka**
+
+![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter\&logoColor=white)
+![NodeJS](https://img.shields.io/badge/Node.js-339933?logo=node.js\&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb\&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python\&logoColor=white)
+![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+Our application connects IT undergraduates in Sri Lanka with their desired company job roles by mapping their academic and skill progress with real industry expectations. It also helps companies discover and hire qualified talent faster by analyzing student profiles, projects, and skillsets.
+
+---
+
+## 🚀 **Project Overview**
+
+This system bridges the gap between **students**, **universities**, and **IT companies** by:
+
+* Guiding undergraduates toward suitable career paths.
+* Recommending job roles based on skills, projects, and industry standards.
+* Allowing companies to search, filter, and hire top talent.
+* Providing AI-powered job recommendations through a Python-based ML model.
+
+---
+
+## 🎥 **Project Videos**
+
+* 🔹 **Introduction Video:** [Demo Video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)([https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy](https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy))
+* 🔹 **Demo / Walkthrough Video:** *Add Your Link Here*
+
+---
+
+## 📁 **Folder Structure**
+
+```
+Carrer_tool/                   # Main project folder
+│
+├── Career_tool/               # Frontend (Flutter)
+│   └── ...                  
+│
+└── Backend/                   # Backend (Node.js + Python Model)
+    ├── job_recommender/       # Python ML environment
+    │   └── venv/
+    └── ...
+```
+
+---
+
+## 🛠️ **Technologies Used**
+
+### **Frontend**
+
+* Flutter (Dart)
+* Android Studio (emulator/debugging)
+
+### **Backend**
+
+* Node.js (API server)
+* MongoDB (Database)
+* Python (Machine Learning Model)
+
+### **Development Tools**
+
+* VS Code
+* Git & GitHub
+
+---
+
+## 💻 **How to Run the Project Locally**
+
+### **1️⃣ Clone the Repository**
+
+```bash
+git clone <your-repo-link>
+cd Carrer_tool
+```
+
+---
+
+## **2️⃣ Start the Backend (Node.js)**
+
+```bash
+cd Backend
+npm install
+npm run dev
+```
+
+---
+
+## **3️⃣ Run the Python Virtual Environment (ML Model)**
+
+Open a **new terminal**:
+
+```bash
+cd Backend/job_recommender
+venv\Scripts\activate
+```
+
+---
+
+## **4️⃣ Start the Flutter Application**
+
+In another terminal:
+
+```bash
+cd Career_tool
+flutter pub get
+flutter run
+```
+
+The entire application (Flutter UI + Node.js API + Python ML model) should now be running.
+
+---
+
+## 📐 **System Architecture**
+
+**Frontend (Flutter)**
+⬇ connects to
+**Backend API (Node.js + Express)**
+⬇ communicates with
+**Machine Learning Model (Python)**
+⬇ reads/writes
+**Database (MongoDB)**
+
+---
+
+## 🔥 **Key Features**
+
+### 🎓 For Undergraduates
+
+* Personalized IT career paths.
+* Compete with real competitors who are seeking dream of working in same company same job role.
+* Job recommendation using ML.
+* Profile building (skills, projects, achievements).
+* Real-time company job listings.
+
+### 🏢 For Companies
+
+* Access to verified student profiles.
+* Simplified hiring dashboard.
+* Filter-based talent search.
+
+---
+
+## 📸 **Screenshots**
+
+*Add screenshots of your app here.*
+
+---
+
+## 🤝 **Contributions**
+
+Pull requests, suggestions, and improvements are welcome.
+
+---
+
+## 📬 **Contact**
+
+If you have questions or issues, feel free to open an Issue on GitHub.
