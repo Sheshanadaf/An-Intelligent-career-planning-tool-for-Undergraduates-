@@ -1,12 +1,5 @@
 # 📘 **An Intelligent Career Planning Tool for IT Undergraduates in Sri Lanka**
 
-![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter\&logoColor=white)
-![NodeJS](https://img.shields.io/badge/Node.js-339933?logo=node.js\&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb\&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python\&logoColor=white)
-![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-
 Our application connects IT undergraduates in Sri Lanka with their desired company job roles by mapping their academic and skill progress with real industry expectations. It also helps companies discover and hire qualified talent faster by analyzing student profiles, projects, and skillsets.
 
 ---
@@ -24,8 +17,8 @@ This system bridges the gap between **students**, **universities**, and **IT com
 
 ## 🎥 **Project Videos**
 
-* 🔹 **Introduction Video:** [Demo Video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)([https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy](https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy))
-* 🔹 **Demo / Walkthrough Video:** *Add Your Link Here*
+* 🔹 **Introduction Video:** [Introduction video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)([https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy](https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy))
+* 🔹 **Demo / Walkthrough Video:** [Demo Video](https://youtu.be/khaW5lh2Bhg?si=YCQtDWDPe0x3Vva-)
 
 ---
 
