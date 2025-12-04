@@ -55,7 +55,7 @@ Carrer_tool/                   # Main project folder
 ### **Development Tools**
 
 * VS Code
-* Git & GitHub
+* GitHub
 
 ---
 
@@ -64,7 +64,7 @@ Carrer_tool/                   # Main project folder
 ### **1️⃣ Clone the Repository**
 
 ```bash
-git clone <your-repo-link>
+git clone https://github.com/Sheshanadaf/An-Intelligent-career-planning-tool-for-Undergraduates-
 cd Carrer_tool
 ```
 
