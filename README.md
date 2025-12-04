@@ -18,7 +18,7 @@ This system bridges the gap between **students** and **IT companies** by:
 
 ## 🎥 **Project Videos**
 
-* 🔹 **Introduction Video:** [Introduction video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)
+* 🔹 **Introduction Video:** [Introduction video](https://youtu.be/eYx42vftYJw?si=f-VKJGIXj76lVWVy)
 * 🔹 **Demo / Walkthrough Video:** [Demo Video](https://youtu.be/khaW5lh2Bhg?si=YCQtDWDPe0x3Vva-)
 
 ---
