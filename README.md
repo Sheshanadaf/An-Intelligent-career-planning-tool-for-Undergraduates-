@@ -6,9 +6,10 @@ Our application connects IT undergraduates in Sri Lanka with their desired compa
 
 ## 🚀 **Project Overview**
 
-This system bridges the gap between **students**, **universities**, and **IT companies** by:
+This system bridges the gap between **students** and **IT companies** by:
 
 * Guiding undergraduates toward suitable career paths.
+* Creating Competition Platform to where students can compete with other university students for specific company job roles positions during university time.
 * Recommending job roles based on skills, projects, and industry standards.
 * Allowing companies to search, filter, and hire top talent.
 * Providing AI-powered job recommendations through a Python-based ML model.
@@ -17,7 +18,7 @@ This system bridges the gap between **students**, **universities**, and **IT com
 
 ## 🎥 **Project Videos**
 
-* 🔹 **Introduction Video:** [Introduction video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)([https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy](https://youtu.be/eYx42vftYJw?si=LPK2TFNxWTVPMlgy))
+* 🔹 **Introduction Video:** [Introduction video](https://youtu.be/khaW5lh2Bhg?si=4LgmTk8uX5gwuXqO)
 * 🔹 **Demo / Walkthrough Video:** [Demo Video](https://youtu.be/khaW5lh2Bhg?si=YCQtDWDPe0x3Vva-)
 
 ---
@@ -128,15 +129,10 @@ The entire application (Flutter UI + Node.js API + Python ML model) should now b
 
 ### 🏢 For Companies
 
-* Access to verified student profiles.
-* Simplified hiring dashboard.
-* Filter-based talent search.
-
----
-
-## 📸 **Screenshots**
-
-*Add screenshots of your app here.*
+* Create company Job posts.
+* View rank under specific compnay job roles.
+* Give the marks for certifications and badges that students have gained,
+* Give the marks for projects that students have ganined.
 
 ---
 
@@ -149,3 +145,4 @@ Pull requests, suggestions, and improvements are welcome.
 ## 📬 **Contact**
 
 If you have questions or issues, feel free to open an Issue on GitHub.
+email: sheshanhebron61@gmail.com
