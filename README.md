@@ -1,6 +1,6 @@
 # 📘 **An Intelligent Career Planning Tool for IT Undergraduates in Sri Lanka**
 
-Our application connects IT undergraduates in Sri Lanka with their desired company job roles by mapping their academic and skill progress with real industry expectations. It also helps companies discover and hire qualified talent faster by analyzing student profiles, projects, and skillsets.
+This mobile application introduces a dynamic competition platform where university students can compete with peers from other institutions for specific company job role positions, helping them showcase their abilities early in their academic journey. Along with this, the app guides undergraduates toward suitable career paths by analyzing their skills, academic performance, and project experience. It recommends ideal job roles based on individual strengths and current industry standards, while also enabling companies to search, filter, and identify top talent. The platform further incorporates an AI-powered Python-based machine learning model to deliver intelligent and personalized job recommendations for every user.
 
 ---
 
